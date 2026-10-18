@@ -106,18 +106,18 @@ code{font-family:var(--f-mono);font-size:.85em;background:var(--bg);border:1px s
   <section aria-labelledby="h-live">
     <h2 id="h-live">Try the prototype</h2>
     <div class="links">
-      <a class="link" href="https://claude.ai/artifact/VDGZh6gDjeEvW6bo8gvvN7" target="_blank" rel="noopener">
+      <a class="link" href="https://geoeoeo217.github.io/MTR-platform-flow/platform-flow/" target="_blank" rel="noopener">
         <img src="screens/sim2d.png" alt="2D simulator showing a crowded platform without guidance beside an even platform with AI lights">
         <div><h3>2D simulator</h3><span class="go">Open live demo ↗</span><p>Two identical platforms side by side: without guidance and with AI lights. Live scores, imbalance chart, and the AI's per-door forecast table.</p></div>
       </a>
-      <a class="link" href="https://claude.ai/artifact/7P5CKX3KCayqxPtwfe7eoh" target="_blank" rel="noopener">
+      <a class="link" href="https://geoeoeo217.github.io/MTR-platform-flow/platform-flow/3d.html" target="_blank" rel="noopener">
         <img src="screens/platform3d.png" alt="3D platform with passengers queuing at eight doors under green lights">
         <div><h3>3D platform</h3><span class="go">Open live demo ↗</span><p>The same model in 3D: tunnels with signs, door lights, people arriving, queuing and getting off. Toggle the AI on and off.</p></div>
       </a>
-      <div class="link">
+      <a class="link" href="https://geoeoeo217.github.io/MTR-platform-flow/model-3d-peron.html" target="_blank" rel="noopener">
         <img src="screens/devices3d.png" alt="3D models of the four devices: CCTV camera, door indicator light, corridor sign and edge AI unit">
-        <div><h3>Hardware: only 4 devices</h3><p>CCTV camera with AI counting, corridor sign, door indicator light and an edge AI unit. Train load and gate data come from systems MTR already runs.</p></div>
-      </div>
+        <div><h3>Hardware: only 4 devices</h3><span class="go">Open live demo ↗</span><p>CCTV camera with AI counting, corridor sign, door indicator light and an edge AI unit. Train load and gate data come from systems MTR already runs.</p></div>
+      </a>
     </div>
   </section>
 
@@ -177,7 +177,7 @@ code{font-family:var(--f-mono);font-size:.85em;background:var(--bg);border:1px s
         <li>The lights advise passengers and staff. They do not replace staff, platform screen doors or safety systems.</li>
       </ul></div>
     </div>
-    <p class="note">Built with plain HTML and JavaScript (2D) and Three.js (3D). No server needed. Results reproduce with <code>python3 proof/run_benchmark.py</code>, which runs the exact model from the simulator and writes <code>results.csv</code> and <code>summary.csv</code>.</p>
+    <p class="note">Code and data: <a href="https://github.com/Geoeoeo217/MTR-platform-flow" style="color:var(--accent)">github.com/Geoeoeo217/MTR-platform-flow</a>. Built with plain HTML and JavaScript (2D) and Three.js (3D). No server needed. Results reproduce with <code>python3 proof/run_benchmark.py</code>, which runs the exact model from the simulator and writes <code>results.csv</code> and <code>summary.csv</code>.</p>
   </section>
 </div>
 

@@ -6,12 +6,14 @@ At rush hour, passengers bunch up at the platform doors closest to the tunnel th
 
 ## Live prototype
 
-| What | Link | File |
+Start here: **https://geoeoeo217.github.io/MTR-platform-flow/**
+
+| What | Public link | File |
 |---|---|---|
-| 2D simulator: side-by-side comparison with live scores | https://claude.ai/artifact/VDGZh6gDjeEvW6bo8gvvN7 | `platform-flow/index.html` |
-| 3D platform: tunnels, door lights, passengers arriving and getting off | https://claude.ai/artifact/7P5CKX3KCayqxPtwfe7eoh | `platform-flow/3d.html` |
-| Prototype proof: results, charts, screenshots | https://claude.ai/artifact/CMrWcmpMjsszJ2mhDsddwe | `proof/index.html` |
-| Hardware concept in 3D (4 devices) | | `model-3d-peron.html` |
+| 2D simulator: side-by-side comparison with live scores | https://geoeoeo217.github.io/MTR-platform-flow/platform-flow/ | `platform-flow/index.html` |
+| 3D platform: tunnels, door lights, passengers arriving and getting off | https://geoeoeo217.github.io/MTR-platform-flow/platform-flow/3d.html | `platform-flow/3d.html` |
+| Prototype proof: results, charts, screenshots | https://geoeoeo217.github.io/MTR-platform-flow/proof/ | `proof/index.html` |
+| Hardware concept in 3D (4 devices) | https://geoeoeo217.github.io/MTR-platform-flow/model-3d-peron.html | `model-3d-peron.html` |
 
 Each file runs offline in any browser: double-click it, or use VS Code's Live Server. The 3D pages need internet access to load Three.js.
 
