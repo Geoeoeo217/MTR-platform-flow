@@ -10,6 +10,7 @@ Start here: **https://geoeoeo217.github.io/MTR-platform-flow/**
 
 | What | Public link | File |
 |---|---|---|
+| **Live AI system**: webcam people-counting, Claude vision + announcements, learning forecast, live lights | https://geoeoeo217.github.io/MTR-platform-flow/live/ | `live/` |
 | 2D simulator: side-by-side comparison with live scores | https://geoeoeo217.github.io/MTR-platform-flow/platform-flow/ | `platform-flow/index.html` |
 | 3D platform: tunnels, door lights, passengers arriving and getting off | https://geoeoeo217.github.io/MTR-platform-flow/platform-flow/3d.html | `platform-flow/3d.html` |
 | Demo reel: self-playing video demo with captions | https://geoeoeo217.github.io/MTR-platform-flow/demo/ | `demo/index.html` |
@@ -17,6 +18,22 @@ Start here: **https://geoeoeo217.github.io/MTR-platform-flow/**
 | Hardware concept in 3D (4 devices) | https://geoeoeo217.github.io/MTR-platform-flow/hardware-3d.html | `hardware-3d.html` |
 
 Each file runs offline in any browser: double-click it, or use VS Code's Live Server. The 3D pages need internet access to load Three.js.
+
+## The live AI system (`live/`)
+
+The simulations show the idea; `live/` is the working system, running in the browser.
+
+| Stage | What runs | AI type |
+|---|---|---|
+| 1. Camera AI | COCO-SSD person detection (TensorFlow.js) on a webcam or video counts people in each door's **queue zone**, inside each **train car**, and crossing each door's **exit line** while the doors are open | Computer vision |
+| 1b. Claude vision | Every few seconds Claude reads a camera frame with the areas labelled and counts people per area, backing up the detector in dense crowds. The higher of the two counts is used | Generative AI (vision) |
+| 2. Forecast | Share of riders who get off at each door = average for the same weekday and 15-minute slot over the most recent 2 weeks, times a correction learned from today’s trains, times people on board now. Every train counted by the exit camera is added to the history | Learning forecast |
+| 3. Decision | room = capacity − on board + forecast getting off; ratio = queue ÷ room; green < 0.7, amber < 1.0, else red; red at once if the queue area is full; a light holds a few seconds before it relaxes | Rules on AI outputs |
+| 4. Communication | When the lights change, Claude writes the tunnel-sign line and a platform announcement in English, 繁體中文 and 简体中文, plus a note for staff | Generative AI (text) |
+
+**Try it:** open the live link, click **Start webcam**, and stand in the queue zones. To switch on Claude, open **Settings & API key** and paste your own Anthropic API key (it is used only from your browser). Without a key, the camera AI, forecast and lights still run. **Manual counts** lets you type queue numbers to test the decisions without a camera.
+
+Files: `live/js/vision.js` (camera AI), `live/js/genai.js` (Claude), `live/js/forecast.js`, `live/js/decision.js`, `live/js/app.js`; sample history in `live/data/history-sample.csv` (regenerate with `python3 live/tools/make_sample_history.py`).
 
 ## Results (Monday 09:00 rush, 60% of passengers follow the lights)
 
@@ -73,6 +90,7 @@ Only 4 new devices are needed. Everything else comes from systems MTR already ru
 ## Project layout
 
 ```
+live/                      live AI system: camera AI, Claude, forecast, lights
 platform-flow/index.html   2D simulator (model + UI)
 platform-flow/3d.html      3D platform view (same model)
 hardware-3d.html           3D hardware concept (4 devices)
