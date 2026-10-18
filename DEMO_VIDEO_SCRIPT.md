@@ -2,7 +2,7 @@
 
 The demo plays itself. `demo/index.html` drives the real prototypes (3D platform, 2D simulator, hardware model) with on-screen captions, so all you do is record the screen.
 
-Live: https://geoeoeo217.github.io/MTR-platform-flow/demo/ (available after you push)
+Live: https://geoeoeo217.github.io/rail-flow-ai/demo/ (available after you push)
 
 ## Steps (Mac)
 

@@ -6,17 +6,17 @@ At rush hour, passengers bunch up at the platform doors closest to the tunnel th
 
 ## The five programs
 
-Start here: **https://geoeoeo217.github.io/MTR-platform-flow/** · every page has the same top bar linking all five.
+Start here: **https://geoeoeo217.github.io/rail-flow-ai/** · every page has the same top bar linking all five.
 
 | # | Program | What it shows | Data | Link |
 |---|---|---|---|---|
-| 1 | **Live system** | The working pipeline: input → counts → capacity → door recommendation → lights and announcement. Webcam, video, virtual CCTV, demo scenarios or manual entry | Real AI detection on real or simulated video; labelled simulated scenarios | https://geoeoeo217.github.io/MTR-platform-flow/live/ |
-| 2 | **2D simulator** | Two identical 8-door platforms side by side, without and with guidance, with live scores | Simulated | https://geoeoeo217.github.io/MTR-platform-flow/platform-flow/ |
-| 3 | **3D platform** | The same model in 3D: tunnel signs, door lights, people arriving, queuing and getting off | Simulated | https://geoeoeo217.github.io/MTR-platform-flow/platform-flow/3d.html |
-| 4 | **Hardware** | The 4 devices to build and where they go in a station | Concept | https://geoeoeo217.github.io/MTR-platform-flow/hardware-3d.html |
-| 5 | **Proof** | 120-run benchmark of the guidance model, charts and screenshots | Simulated benchmark | https://geoeoeo217.github.io/MTR-platform-flow/proof/ |
+| 1 | **Live system** | The working pipeline: input → counts → capacity → door recommendation → lights and announcement. Webcam, video, virtual CCTV, demo scenarios or manual entry | Real AI detection on real or simulated video; labelled simulated scenarios | https://geoeoeo217.github.io/rail-flow-ai/live/ |
+| 2 | **2D simulator** | Two identical 8-door platforms side by side, without and with guidance, with live scores | Simulated | https://geoeoeo217.github.io/rail-flow-ai/platform-flow/ |
+| 3 | **3D platform** | The same model in 3D: tunnel signs, door lights, people arriving, queuing and getting off | Simulated | https://geoeoeo217.github.io/rail-flow-ai/platform-flow/3d.html |
+| 4 | **Hardware** | The 4 devices to build and where they go in a station | Concept | https://geoeoeo217.github.io/rail-flow-ai/hardware-3d.html |
+| 5 | **Proof** | 120-run benchmark of the guidance model, charts and screenshots | Simulated benchmark | https://geoeoeo217.github.io/rail-flow-ai/proof/ |
 
-Also: a self-playing demo reel for recording the video (https://geoeoeo217.github.io/MTR-platform-flow/demo/) and the previous live system kept as a backup (https://geoeoeo217.github.io/MTR-platform-flow/archive/live-v1/).
+Also: a self-playing demo reel for recording the video (https://geoeoeo217.github.io/rail-flow-ai/demo/) and the previous live system kept as a backup (https://geoeoeo217.github.io/rail-flow-ai/archive/live-v1/).
 
 All five use the same door labels (1A, 2A, …), the same light colours (green = room, amber = limited, red = full) and the same room rule (capacity − on board + people getting off). The simulators model a full 8-door platform; the live system and hardware concept use 4 doors so they fit a laptop demo.
 

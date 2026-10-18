@@ -1,0 +1,19 @@
+{
+  "v": 4,
+  "createdOnFiles": {"v": 1, "at": "2026-10-18T15:12:00Z"},
+  "lists": "css",
+  "title": "Rail Flow AI",
+  "order": ["cover", "problem", "solution", "how", "ai", "video", "results", "hardware", "close"],
+  "sections": {
+    "s1": {"description": "Team, project and the problem", "start": "cover"},
+    "s2": {"description": "How Rail Flow AI works and where the AI is", "start": "solution"},
+    "s3": {"description": "Working prototype, demo video and results", "start": "video"},
+    "s4": {"description": "Hardware scope and links", "start": "hardware"}
+  },
+  "faces": {
+    "barlow-condensed": {"family": "Barlow Condensed", "href": "https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&display=swap"},
+    "ibm-plex-sans": {"family": "IBM Plex Sans", "href": "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap"},
+    "ibm-plex-mono": {"family": "IBM Plex Mono", "href": "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap"}
+  },
+  "designSystems": []
+}
