@@ -1,4 +1,4 @@
-// Platform Flow Live: wires the camera AI, Claude, the forecast and the decision engine together
+// Platform Flow Live: wires the camera AI, generative AI (Claude or a local Ollama model), the forecast and the decision engine together
 // and drives the on-screen signs. Everything runs in the browser.
 
 import { Vision } from './vision.js';
@@ -15,7 +15,7 @@ const PRESETS = {
   station: { capacity: 230, queueMax: 63, headway: 120, dwell: 25, label: 'Real station (230 per car)' },
 };
 
-const cfg = Object.assign({ preset: 'desk', doors: 4, holdSec: 4, aiEvery: 15, model: 'claude-opus-5-5', remember: false, auto: true },
+const cfg = Object.assign({ preset: 'desk', doors: 4, holdSec: 4, aiEvery: 15, provider: 'ollama', model: 'claude-opus-5-5', ollamaUrl: 'http://localhost:11434', ollamaModel: 'qwen3-vl:2b-instruct', remember: false, auto: true },
   LS.get('pf-live-cfg', {}));
 Object.assign(cfg, PRESETS[cfg.preset], LS.get('pf-live-cfg', {}));
 let apiKey = cfg.remember ? (LS.get('pf-live-key', '') || '') : '';
@@ -41,7 +41,7 @@ async function init() {
   try { await vision.loadModel(); $('status').textContent = `Ready. ${n.toLocaleString()} history records loaded. Start a camera, or use manual counts.`; }
   catch (e) { $('status').textContent = 'The people-detection model could not load (needs internet). Manual counts still work.'; }
   vision.defaultZones(cfg.doors);
-  genai.connect(apiKey, cfg.model);
+  connectAI();
   vision.onZonesChanged = renderZoneList;
   buildControls(); renderZoneList(); renderGenAI(); applySettingsForm();
   loop(); setInterval(tickTrain, 250); setInterval(claudeLoop, 1000);
@@ -65,7 +65,8 @@ function buildControls() {
   $('openSettings').onclick = () => { applySettingsForm(); $('settings').showModal(); };
   $('settingsForm').onsubmit = e => { e.preventDefault(); readSettingsForm(); $('settings').close(); };
   $('cancelSettings').onclick = () => $('settings').close();
-  $('forgetKey').onclick = () => { apiKey = ''; LS.set('pf-live-key', ''); $('setKey').value = ''; genai.connect('', cfg.model); renderGenAI(); };
+  $('setProvider').onchange = showProviderFields;
+  $('forgetKey').onclick = () => { apiKey = ''; LS.set('pf-live-key', ''); $('setKey').value = ''; connectAI(); renderGenAI(); };
   for (const sel of [$('toolDoor')]) sel.innerHTML = Array.from({ length: cfg.doors }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join('');
   $('auto').checked = cfg.auto;
 }
@@ -102,7 +103,7 @@ function setSource(s) {
   if (s === 'manual') buildManualPanel();
   $('camEmpty').hidden = s !== 'none' && s !== 'manual';
   $('camEmpty').textContent = s === 'manual' ? 'Manual counts: type queue numbers in the table below.' : 'No camera yet';
-  $('status').textContent = { camera: 'Webcam running. Stand in the queue areas to test.', video: 'Playing the uploaded video.', image: 'Using a still frame. Claude can count it; the detector looks for real people only.', manual: 'Manual mode: edit the queue numbers in the door table.' }[s] || '';
+  $('status').textContent = { camera: 'Webcam running. Stand in the queue areas to test.', video: 'Playing the uploaded video.', image: 'Using a still frame. The GenAI model can count it; the detector looks for real people only.', manual: 'Manual mode: edit the queue numbers in the door table.' }[s] || '';
 }
 
 // ---------------- main loop: camera → counts → decision → lights ----------------
@@ -123,10 +124,11 @@ function update(counts) {
   const doors = [];
   for (let d = 1; d <= cfg.doors; d++) {
     const det = state.source === 'manual' ? (state.manualQueue[d] ?? 0) : (counts.queue[d] ?? 0);
-    const cq = claudeCount(`QUEUE ${d}A`);
-    const queue = cq === undefined ? det : Math.max(det, cq);
+    // Claude's count backs up the detector in dense crowds; a small local model's count is shown but not used
+    const cq = claudeCount(`QUEUE ${d}A`), trustAI = genai.provider === 'claude';
+    const queue = cq === undefined || !trustAI ? det : Math.max(det, cq);
     const hasCarZone = vision.zones.some(z => z.kind === 'car' && z.door === d) && state.source !== 'manual';
-    const carCam = hasCarZone ? Math.max(counts.car[d] ?? 0, claudeCount(`CAR ${d}`) ?? 0) : null;
+    const carCam = hasCarZone ? Math.max(counts.car[d] ?? 0, trustAI ? claudeCount(`CAR ${d}`) ?? 0 : 0) : null;
     const onboard = state.phase === 'open' || state.phase === 'closed' ? (state.onboardSnapshot[d] ?? 0) : (carCam ?? state.feedOnboard[d] ?? 0);
     const f = forecaster.alighting(d, onboard);
     doors.push({ door: d, label: `${d}A`, queue, queueDetector: det, queueClaude: cq, onboard, onboardSource: carCam !== null ? 'car camera' : 'train data', forecastOff: f.count, f, exits: counts.exits[d] ?? 0 });
@@ -184,7 +186,7 @@ function recordTrain() {
   renderLearning();
 }
 
-// ---------------- Claude ----------------
+// ---------------- Generative AI (Claude or Ollama) ----------------
 function claudeLoop() {
   if (!genai.enabled || genai.busy.count || state.source === 'manual' || state.source === 'none') return;
   if (Date.now() - state.claudeAt >= cfg.aiEvery * 1000) runClaudeCount(false);
@@ -195,7 +197,7 @@ async function runClaudeCount(manual) {
   if (genai.busy.count) return;
   const frame = vision.frameJPEG(1024);
   if (!frame || !frame.labels.length) { $('aiStatus').textContent = 'Start a camera or video and draw at least one queue or car area first.'; return; }
-  genai.busy.count = true; state.claudeAt = Date.now(); $('aiStatus').textContent = 'Claude is counting the frame…';
+  genai.busy.count = true; state.claudeAt = Date.now(); $('aiStatus').textContent = `${genai.name} is counting the frame…`;
   const t0 = performance.now();
   try {
     state.claude = await genai.countCrowd(frame.data, frame.labels);
@@ -210,9 +212,12 @@ function maybeGuide() { if (genai.enabled && Date.now() - state.lastGuideAt > 20
 async function runGuidance(manual) {
   if (!genai.enabled) { if (manual) $('settings').showModal(); return; }
   if (genai.busy.guide) return;
-  genai.busy.guide = true; state.lastGuideAt = Date.now(); $('guideStatus').textContent = 'Claude is writing guidance…';
+  genai.busy.guide = true; state.lastGuideAt = Date.now(); $('guideStatus').textContent = `${genai.name} is writing guidance…`;
+  // The decision is already made by the rules; the model only has to put it into words
+  const by = c => state.decisions.filter(d => d.light === c).map(d => d.label);
   const input = { station: 'Admiralty', time: new Date().toLocaleTimeString('en-HK', { hour: '2-digit', minute: '2-digit' }),
-    doors: state.decisions.map(d => ({ door: d.label, light: { g: 'green', y: 'amber', r: 'red' }[d.light], queue: d.queue, predicted_room: d.room, on_board: d.onboard, forecast_getting_off: d.forecastOff })) };
+    walk_to_doors: by('g'), limited_space_doors: by('y'), full_doors_avoid: by('r'),
+    details: state.decisions.map(d => ({ door: d.label, light: { g: 'green', y: 'amber', r: 'red' }[d.light], people_queuing: d.queue, space_on_next_train: d.room })) };
   try { state.guide = await genai.writeGuidance(input); state.guideAt = new Date(); $('guideStatus').textContent = 'Updated ' + state.guideAt.toLocaleTimeString(); }
   catch (e) { $('guideStatus').textContent = describeError(e); }
   genai.busy.guide = false; renderGenAI();
@@ -235,7 +240,7 @@ function renderTable() {
   $('doorTable').innerHTML = `<thead><tr><th></th>${ds.map(d => `<th>${d.label}</th>`).join('')}</tr></thead><tbody>
     ${row('Queue (fused)', d => `<td><b>${d.queue}</b></td>`)}
     ${row('· camera detector', d => `<td>${manual ? '–' : d.queueDetector}</td>`)}
-    ${row('· Claude vision', d => `<td>${d.queueClaude ?? '–'}</td>`)}
+    ${row(genai.provider === 'claude' ? '· GenAI vision' : '· GenAI vision (shown only)', d => `<td>${d.queueClaude ?? '–'}</td>`)}
     ${row('On board', d => `<td>${d.onboard}<small>${d.onboardSource}</small></td>`)}
     ${row('Forecast getting off', d => `<td>${d.forecastOff}<small>${(d.f.share * 100).toFixed(0)}% of riders</small></td>`)}
     ${row('Predicted room', d => `<td>${d.room}</td>`)}
@@ -264,7 +269,7 @@ function renderZoneList() {
 }
 
 function renderGenAI() {
-  $('aiOff').hidden = genai.enabled; $('aiOn').hidden = !genai.enabled;
+  $('aiOff').hidden = genai.enabled; $('aiOn').hidden = !genai.enabled; $('aiName').textContent = genai.enabled ? genai.name : 'off';
   const c = state.claude;
   $('aiCount').innerHTML = c ? `<p><b>${c.people_total}</b> people · crowding <b>${c.crowding}</b> · ${c.areas.map(a => `${a.label}: ${a.people}`).join(' · ')}</p><p class="muted">${escapeHtml(c.notes)}</p>` : '<p class="muted">No frame analysed yet.</p>';
   const g = state.guide;
@@ -288,16 +293,20 @@ setInterval(renderLearning, 3000);
 // ---------------- settings ----------------
 function applySettingsForm() {
   $('setKey').value = apiKey; $('setRemember').checked = cfg.remember; $('setModel').value = cfg.model;
+  $('setProvider').value = cfg.provider; $('setOllamaUrl').value = cfg.ollamaUrl; $('setOllamaModel').value = cfg.ollamaModel; showProviderFields();
   $('setPreset').value = cfg.preset; $('setDoors').value = cfg.doors; $('setEvery').value = cfg.aiEvery; $('setHold').value = cfg.holdSec;
 }
 function readSettingsForm() {
   apiKey = $('setKey').value.trim(); cfg.remember = $('setRemember').checked; cfg.model = $('setModel').value.trim() || 'claude-opus-5-5';
+  cfg.provider = $('setProvider').value; cfg.ollamaUrl = $('setOllamaUrl').value.trim() || 'http://localhost:11434'; cfg.ollamaModel = $('setOllamaModel').value.trim() || 'qwen3-vl:2b-instruct';
   const preset = $('setPreset').value; if (preset !== cfg.preset) { cfg.preset = preset; Object.assign(cfg, PRESETS[preset]); newTrainFeed(); }
   const doors = Math.min(8, Math.max(2, +$('setDoors').value || 4)); if (doors !== cfg.doors) { cfg.doors = doors; vision.defaultZones(doors); engine.reset(); buildControls(); renderZoneList(); if (state.source === 'manual') buildManualPanel(); }
   cfg.aiEvery = Math.max(5, +$('setEvery').value || 15); cfg.holdSec = Math.max(0, +$('setHold').value || 0);
   LS.set('pf-live-key', cfg.remember ? apiKey : '');
-  save(); genai.connect(apiKey, cfg.model); renderGenAI();
+  save(); connectAI(); renderGenAI();
 }
+function connectAI() { genai.connect({ provider: cfg.provider, apiKey, model: cfg.model, ollamaUrl: cfg.ollamaUrl, ollamaModel: cfg.ollamaModel }); }
+function showProviderFields() { const o = $('setProvider').value === 'ollama'; $('claudeFields').hidden = o; $('ollamaFields').hidden = !o; }
 function save() { const { capacity, queueMax, headway, dwell, label, ...rest } = cfg; LS.set('pf-live-cfg', rest); }
 
 function escapeHtml(s) { return String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]); }

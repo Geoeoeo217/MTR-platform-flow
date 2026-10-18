@@ -26,12 +26,40 @@ The simulations show the idea; `live/` is the working system, running in the bro
 | Stage | What runs | AI type |
 |---|---|---|
 | 1. Camera AI | COCO-SSD person detection (TensorFlow.js) on a webcam or video counts people in each door's **queue zone**, inside each **train car**, and crossing each door's **exit line** while the doors are open | Computer vision |
-| 1b. Claude vision | Every few seconds Claude reads a camera frame with the areas labelled and counts people per area, backing up the detector in dense crowds. The higher of the two counts is used | Generative AI (vision) |
+| 1b. GenAI vision | Every few seconds the GenAI model (Claude, or Qwen3-VL through Ollama) reads a camera frame with the areas labelled and counts people per area, backing up the detector in dense crowds. With Claude the higher of the two counts is used; a small local Ollama model's count is shown for comparison only, because it is not accurate enough to steer the lights | Generative AI (vision) |
 | 2. Forecast | Share of riders who get off at each door = average for the same weekday and 15-minute slot over the most recent 2 weeks, times a correction learned from today’s trains, times people on board now. Every train counted by the exit camera is added to the history | Learning forecast |
 | 3. Decision | room = capacity − on board + forecast getting off; ratio = queue ÷ room; green < 0.7, amber < 1.0, else red; red at once if the queue area is full; a light holds a few seconds before it relaxes | Rules on AI outputs |
-| 4. Communication | When the lights change, Claude writes the tunnel-sign line and a platform announcement in English, 繁體中文 and 简体中文, plus a note for staff | Generative AI (text) |
+| 4. Communication | When the lights change, the GenAI model writes the tunnel-sign line and a platform announcement in English, 繁體中文 and 简体中文, plus a note for staff | Generative AI (text) |
 
-**Try it:** open the live link, click **Start webcam**, and stand in the queue zones. To switch on Claude, open **Settings & API key** and paste your own Anthropic API key (it is used only from your browser). Without a key, the camera AI, forecast and lights still run. **Manual counts** lets you type queue numbers to test the decisions without a camera.
+**Try it:** open the live link, click **Start webcam**, and stand in the queue zones. **Manual counts** lets you type queue numbers to test the decisions without a camera. The GenAI parts can run on either of two models, chosen in **Settings & API key**:
+
+- **Ollama (free, on your own computer).** See *Using Ollama* below.
+- **Claude.** Paste your own Anthropic API key. It is used only from your browser.
+
+Without either, the camera AI, forecast and lights still run.
+
+### Using Ollama (free)
+
+1. Install Ollama from https://ollama.com and open the app.
+2. Download the small vision model once (about 1.9 GB, runs on 8 GB RAM):
+
+   ```bash
+   ollama pull qwen3-vl:2b-instruct
+   ```
+
+3. Run the page from your own computer, so it can talk to Ollama. In the project folder:
+
+   ```bash
+   python3 -m http.server 8000
+   ```
+
+   Then open http://localhost:8000/live/, open **Settings**, and pick **Ollama**.
+
+To use Ollama from the GitHub Pages link instead, allow that site and restart the Ollama app:
+
+```bash
+launchctl setenv OLLAMA_ORIGINS "https://geoeoeo217.github.io"
+```
 
 Files: `live/js/vision.js` (camera AI), `live/js/genai.js` (Claude), `live/js/forecast.js`, `live/js/decision.js`, `live/js/app.js`; sample history in `live/data/history-sample.csv` (regenerate with `python3 live/tools/make_sample_history.py`).
 

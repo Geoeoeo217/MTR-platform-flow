@@ -1,8 +1,8 @@
-// Generative AI (Claude) in two roles:
+// Generative AI in two roles, using either Claude (API key) or a free local model through Ollama:
 //   1. Crowd analyst: looks at a camera frame (with the counting areas drawn on it) and counts people per area.
 //      This backs up the on-device detector, which undercounts when people stand close together.
 //   2. Communicator: turns the current decision into sign text, multilingual announcements and a staff note.
-// Runs in the browser with the user's own API key, which never leaves their device except to call the API.
+// Claude runs from the browser with the user's own API key; Ollama runs entirely on this computer.
 
 import Anthropic from 'https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@0.131.0/+esm';
 
@@ -40,24 +40,39 @@ const GUIDE_SCHEMA = {
 
 const COUNT_SYSTEM = `You count people in CCTV frames from a metro platform. Coloured rectangles labelled "QUEUE nA" mark the queue area of platform door n; rectangles labelled "CAR n" mark the inside of train car n. Count every person whose feet are inside each queue area, and every person inside each car area, including people who are partly hidden behind others. Count real people only, not posters or reflections. If an area is not visible, give 0 and say so in notes. Keep notes to one short sentence.`;
 
-const GUIDE_SYSTEM = `You write passenger guidance for MTR platform signs and announcements in Hong Kong. You receive the current state of each platform door: its light colour (green = room predicted on the next train, amber = limited, red = full), the queue, and the predicted room. Write:
-- sign_en / sign_zh_hant / sign_zh_hans: one line for the tunnel sign, at most 60 characters in English, telling people which doors to walk to.
-- announcement_en / announcement_zh_hant / announcement_zh_hans: one calm, polite platform announcement of one or two sentences, in MTR's style. Traditional Chinese should read naturally for Hong Kong.
-- staff_note: one or two sentences for station staff explaining why the lights are set this way and anything to watch.
-Use door labels exactly as given (for example 3A). Never tell people to run or rush.`;
+const GUIDE_SYSTEM = `You write passenger guidance for MTR platform signs and announcements in Hong Kong. The input already says which doors to send people to (walk_to_doors), which have limited space, and which are full (full_doors_avoid). Do not change that decision; only put it into words. "Space" means space on the train, never a room.
+Fields:
+- sign_en: English, at most 60 characters, naming the walk_to_doors. Template: "More space at doors <walk_to_doors> →"
+- sign_zh_hant: the same line in Traditional Chinese for Hong Kong. Template: 「<walk_to_doors>車門較多空位」
+- sign_zh_hans: the same line in Simplified Chinese. Template: “<walk_to_doors>车门较多空位”
+- announcement_en: one or two calm, polite sentences in English, MTR style, asking passengers to use the walk_to_doors and avoid the full doors.
+- announcement_zh_hant: that announcement in Traditional Chinese (Hong Kong).
+- announcement_zh_hans: that announcement in Simplified Chinese.
+- staff_note: one or two sentences in English for staff: which doors are full, why (queue versus space), and what to watch.
+Replace <walk_to_doors> with the actual doors from the input. Use door labels exactly as given. If walk_to_doors is empty, ask passengers to spread along the platform. Never tell people to run or rush.`;
 
 export class GenAI {
-  constructor() { this.client = null; this.model = 'claude-opus-5-5'; this.busy = { count: false, guide: false }; }
-
-  connect(apiKey, model) {
-    this.client = apiKey ? new Anthropic({ apiKey, dangerouslyAllowBrowser: true }) : null;
-    if (model) this.model = model;
+  constructor() {
+    this.provider = 'claude'; this.client = null; this.model = 'claude-opus-5-5';
+    this.ollamaUrl = 'http://localhost:11434'; this.ollamaModel = 'qwen3-vl:2b-instruct';
+    this.busy = { count: false, guide: false };
   }
 
-  get enabled() { return !!this.client; }
+  // provider 'claude' needs an API key; provider 'ollama' runs a free local model on this computer
+  connect({ provider, apiKey, model, ollamaUrl, ollamaModel }) {
+    this.provider = provider || 'claude';
+    this.client = this.provider === 'claude' && apiKey ? new Anthropic({ apiKey, dangerouslyAllowBrowser: true }) : null;
+    if (model) this.model = model;
+    if (ollamaUrl) this.ollamaUrl = ollamaUrl.replace(/\/+$/, '');
+    if (ollamaModel) this.ollamaModel = ollamaModel;
+  }
+
+  get enabled() { return this.provider === 'ollama' || !!this.client; }
+  get name() { return this.provider === 'ollama' ? `Ollama · ${this.ollamaModel}` : 'Claude'; }
 
   async countCrowd(jpegB64, labels) {
     const prompt = `Areas to count: ${labels.join(', ')}. Return one entry per area, using these exact labels.`;
+    if (this.provider === 'ollama') return this._ollama(COUNT_SYSTEM, prompt, [jpegB64], COUNT_SCHEMA);
     return this._json(COUNT_SYSTEM, [
       { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: jpegB64 } },
       { type: 'text', text: prompt },
@@ -65,7 +80,29 @@ export class GenAI {
   }
 
   async writeGuidance(state) {
+    if (this.provider === 'ollama') return this._ollama(GUIDE_SYSTEM, JSON.stringify(state), [], GUIDE_SCHEMA);
     return this._json(GUIDE_SYSTEM, [{ type: 'text', text: JSON.stringify(state) }], GUIDE_SCHEMA, 'low');
+  }
+
+  // Ollama's chat API, with the same JSON schema so the answer has the same shape as Claude's
+  async _ollama(system, text, images, schema) {
+    let res;
+    try {
+      res = await fetch(`${this.ollamaUrl}/api/chat`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: this.ollamaModel, stream: false, format: schema, options: { temperature: 0 },
+          messages: [{ role: 'system', content: system }, { role: 'user', content: text, ...(images.length ? { images } : {}) }],
+        }),
+      });
+    } catch {
+      throw new Error(`Can’t reach Ollama at ${this.ollamaUrl}. Make sure the Ollama app is running. If you opened this page from GitHub, see “Using Ollama” in the README.`);
+    }
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(res.status === 404 ? `Ollama doesn’t have the model “${this.ollamaModel}”. Run: ollama pull ${this.ollamaModel}` : `Ollama error ${res.status}: ${data.error || res.statusText}`);
+    const out = data.message?.content;
+    if (!out) throw new Error('Ollama returned no answer.');
+    return JSON.parse(out);
   }
 
   async _json(system, content, schema, effort) {
