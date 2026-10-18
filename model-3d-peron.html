@@ -153,9 +153,18 @@ td small{display:block;font:400 10.5px/1.2 var(--mono);color:var(--muted);margin
       <!-- Panel 1: devices -->
       <div id="panel-alat">
         <div class="sec">
-          <span class="eyebrow">7 perangkat</span>
+          <span class="eyebrow">4 perangkat yang kami bangun</span>
           <h2>Perangkat sistem</h2>
           <div class="devlist" id="devlist"></div>
+        </div>
+        <div class="sec">
+          <span class="eyebrow">Dipakai dari MTR · tanpa alat baru</span>
+          <dl>
+            <div><dt>Isi tiap gerbong</dt><dd>Data beban dari sensor bawaan kereta (dipakai untuk sistem rem).</dd></div>
+            <div><dt>Penumpang turun (historis)</dt><dd>Dihitung oleh kamera CCTV kami, ditambah selisih beban gerbong sebelum dan sesudah pintu dibuka.</dd></div>
+            <div><dt>Kamera</dt><dd>CCTV peron yang sudah terpasang bisa dipakai ulang.</dd></div>
+          </dl>
+          <div class="proto"><dt>Prototipe hackathon</dt><dd>Webcam · laptop · ESP32 · strip LED WS2812B. Data beban gerbong dan data historis disimulasikan.</dd></div>
         </div>
         <div class="sec" id="detail-alat"></div>
         <div class="sec">
@@ -189,7 +198,7 @@ td small{display:block;font:400 10.5px/1.2 var(--mono);color:var(--muted);margin
             <thead><tr><th>Zona</th><th>Antre</th><th>Ruang diprediksi<br>(kap − isi + turun)</th><th>Lampu</th></tr></thead>
             <tbody id="zrows"></tbody>
           </table>
-          <p class="note">Ruang diprediksi = kapasitas gerbong − isi dari sensor beban + perkiraan turun dari data historis (Senin 09.00). Lampu dihitung dari antrean dibanding ruang itu.</p>
+          <p class="note">Ruang diprediksi = kapasitas gerbong − isi dari data beban kereta MTR + perkiraan turun dari data historis (Senin 09.00). Lampu dihitung dari antrean dibanding ruang itu.</p>
         </div>
         <div class="sec">
           <span class="eyebrow">Evaluasi distribusi</span>
@@ -233,34 +242,16 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 /* ---------- device copy ---------- */
 const DEV = {
   cctv:{name:'Kamera CCTV + AI', tag:'Hitung antrean',
-    role:'Menghitung jumlah orang di setiap zona antrean dengan model deteksi orang (mis. YOLO). Zona digambar sebagai area di gambar kamera.',
+    role:'Menghitung jumlah orang di setiap zona antrean dengan model deteksi orang (mis. YOLO), dan menghitung penumpang yang turun di depan pintu. Satu kamera menggantikan sensor antrean dan sensor pintu terpisah.',
     where:'Langit-langit peron, menghadap barisan antrean. Bisa memakai CCTV yang sudah terpasang.',
     data:'Hanya angka: jumlah orang per zona setiap 1–2 detik. Video diproses di stasiun dan tidak disimpan.',
     proto:'Webcam USB di atas maket + YOLOv8 di laptop.',
     mtr:'Dipasang di rel kabel atas peron, menyorot zona 1–4 dari arah pintu kaca.'},
-  tof:{name:'Sensor 3D ToF overhead', tag:'Hitung antrean (padat)',
-    role:'Kamera kedalaman yang menghitung kepala dari atas. Tetap akurat saat sangat padat karena orang tidak saling menutupi.',
-    where:'Di atas tiap zona antrean, tinggi 3–4 m.',
-    data:'Jumlah dan posisi orang per zona. Tanpa wajah, jadi ramah privasi (PDPO).',
-    proto:'Opsional: sensor VL53L1X atau kamera depth murah.',
-    mtr:'Satu sensor di atas tiap zona sebagai pelengkap CCTV di titik paling padat.'},
-  apc:{name:'Penghitung pintu (APC)', tag:'Hitung yang turun',
-    role:'Sensor di atas pintu kereta yang menghitung arah gerak: berapa orang turun dan naik di setiap pintu.',
-    where:'Bagian atas tiap pintu kereta.',
-    data:'Jumlah turun/naik per pintu per stasiun. Disimpan sebagai data historis (stasiun, hari, jam).',
-    proto:'Sensor IR break-beam atau ToF di pintu maket.',
-    mtr:'Satu sensor di atas setiap pintu gerbong. Data ini yang membentuk pola “Senin 09.00 banyak turun di gerbong 2”.'},
-  load:{name:'Sensor beban suspensi', tag:'Isi gerbong',
-    role:'Membaca tekanan pegas udara di bogie. Berat gerbong ÷ rata-rata berat orang = perkiraan jumlah penumpang.',
-    where:'Bogie setiap gerbong. Kereta modern umumnya sudah memilikinya.',
-    data:'Isi tiap gerbong, dikirim ke stasiun berikut sebelum kereta tiba. Selisih berat sebelum dan sesudah pintu dibuka = jumlah yang turun.',
-    proto:'Load cell + modul HX711 di bawah maket gerbong.',
-    mtr:'Komponen oranye di bawah gerbong. Datanya membuat lampu berubah sebelum kereta masuk peron.'},
   edge:{name:'Unit Edge AI', tag:'Otak sistem',
     role:'Menjalankan deteksi orang, model prediksi kepadatan, dan aturan rekomendasi zona di stasiun, tanpa bergantung internet.',
     where:'Kabinet teknik di ujung peron.',
-    data:'Mengirim warna lampu ke panel, dan ringkasan ke ruang kontrol staf.',
-    proto:'Raspberry Pi 5 atau laptop.',
+    data:'Menerima data beban gerbong dari sistem kereta MTR, mengirim warna lampu ke panel, dan ringkasan ke ruang kontrol staf.',
+    proto:'Laptop (atau Raspberry Pi 5).',
     mtr:'Kabinet di dinding belakang. Terhubung ke kamera, sensor kereta, dan semua lampu.'},
   sign:{name:'Panel arah di koridor', tag:'Arahan awal',
     role:'Menunjukkan zona yang direkomendasikan sebelum penumpang sampai di peron, lengkap dengan nomor zona dan panah.',
@@ -268,14 +259,14 @@ const DEV = {
     data:'Warna, panah, dan label per zona. Tidak hanya warna, supaya terbaca oleh penumpang buta warna.',
     proto:'Strip LED WS2812B + ESP32, atau layar kecil.',
     mtr:'Digantung di mulut koridor. Penumpang yang datang dari koridor memilih zona dari sini.'},
-  strip:{name:'Strip LED lantai & indikator pintu', tag:'Arahan dekat pintu',
-    role:'Konfirmasi di dekat area naik: hijau, kuning, atau merah per zona, ditambah indikator di atas pintu kaca peron.',
-    where:'Sepanjang garis antrean di depan pintu kaca peron (PSD).',
+  strip:{name:'Lampu indikator pintu', tag:'Arahan dekat pintu',
+    role:'Konfirmasi di dekat area naik: lampu hijau, kuning, atau merah di atas pintu kaca peron setiap zona.',
+    where:'Di atas pintu kaca peron (PSD), satu per zona.',
     data:'Warna per zona. Di dunia nyata diberi jeda minimum (mis. 30 detik) agar tidak berkedip-kedip.',
-    proto:'Strip LED WS2812B.',
-    mtr:'Garis cahaya di lantai depan tiap gerbong dan lampu kecil di atas pintu kaca.'}
+    proto:'Potongan strip LED WS2812B, dikendalikan ESP32 yang sama dengan panel koridor.',
+    mtr:'Lampu di atas pintu kaca tiap gerbong.'}
 };
-const ORDER = ['cctv','tof','apc','load','edge','sign','strip'];
+const ORDER = ['cctv','edge','sign','strip'];
 
 /* ---------- renderer / camera ---------- */
 const stage = $('#stage'), canvas = $('#c'), labelLayer = $('#labels');
@@ -428,7 +419,7 @@ function buildAlat(){
   };
 
   /* CCTV */
-  place('cctv', -6.2, -3, 1.3, 2.9, () => {
+  place('cctv', -6.4, -.6, 1.3, 2.9, () => {
     const g = new THREE.Group();
     const white = mat(0xf0f2f1,{roughness:.4}), dark = mat(0x1b2224,{roughness:.35,metalness:.4}), glass = mat(0x071216,{roughness:.05,metalness:.85});
     mesh(C(.06,.06,2.2,12), metal, 0,1.1,-.3, g);
@@ -447,56 +438,9 @@ function buildAlat(){
     return g;
   });
 
-  /* ToF */
-  place('tof', -2.1, -3, 1.3, 3.25, () => {
-    const g = new THREE.Group();
-    const white = mat(0xf4f5f4,{roughness:.35}), glass = mat(0x061014,{roughness:.05,metalness:.8});
-    mesh(C(.06,.06,2.7,12), metal, 0,1.35,-.9, g);
-    mesh(B(.8,.05,1.2), metal, 0,2.72,-.35, g);
-    mesh(B(.72,.14,.42), white, 0,2.62,0, g);
-    for(const x of [-.13,.13]) mesh(C(.055,.055,.02,20), glass, x,2.545,0, g, false);
-    mesh(B(.05,.02,.05), basic(0x2bd47a), .27,2.548,.12, g, false);
-    const cone = mesh(new THREE.ConeGeometry(1.08, 2.5, 40, 1, true),
-      basic(0x3cc2b5,{transparent:true, opacity:.1, side:THREE.DoubleSide, depthWrite:false}), 0,1.28,0, g, false);
-    const ringM = basic(0x3cc2b5,{transparent:true, opacity:.6, side:THREE.DoubleSide});
-    [[-.45,.2],[.35,-.3],[.15,.5]].forEach(([x,z]) => {
-      const p = makePerson(.55); p.position.set(x,0,z); g.add(p);
-      const r = new THREE.Mesh(new THREE.RingGeometry(.15,.19,24), ringM); r.rotation.x = -Math.PI/2; r.position.set(x,.68,z); g.add(r);
-    });
-    A.anims.push(t => { cone.material.opacity = .07 + .05*(Math.sin(t*2)*.5+.5); });
-    return g;
-  });
-
-  /* APC door counter */
-  place('apc', 2.1, -3, 1.5, 2.95, () => {
-    const g = new THREE.Group();
-    const frame = mat(0xc4ccca,{metalness:.5, roughness:.35}), dark = mat(0x1b2224,{roughness:.35,metalness:.4});
-    const glassM = mat(0x9fbcc2,{transparent:true, opacity:.5, metalness:.3, roughness:.1});
-    for(const x of [-.86,.86]) mesh(B(.12,2.1,.3), frame, x,1.05,0, g);
-    for(const x of [-1.3,1.3]) mesh(B(.78,2.42,.14), mat(0xd9dedc,{roughness:.6}), x,1.21,-.08, g);
-    mesh(B(3.38,.34,.36), frame, 0,2.25,0, g);
-    mesh(B(.62,.06,.16), dark, 0,2.05,.04, g);
-    for(const x of [-.13,.13]) mesh(C(.04,.04,.02,16), mat(0x061014,{metalness:.8,roughness:.05}), x,2.02,.04, g, false);
-    mesh(B(.04,.02,.04), basic(0x2bd47a), .24,2.02,.1, g, false);
-    const beam = mesh(B(1.5,1.98,.02), basic(0x3cc2b5,{transparent:true,opacity:.12,depthWrite:false}), 0,1.02,.04, g, false);
-    const lL = mesh(B(.82,2.0,.05), glassM, -.41,1.0,-.12, g);
-    const lR = mesh(B(.82,2.0,.05), glassM, .41,1.0,-.12, g);
-    const walker = makePerson(.62); g.add(walker);
-    A.anims.push(t => {
-      const cyc = (t % 6) / 6; // 0..1
-      const open = clamp(Math.min(cyc/.12, (1-cyc)/.12), 0, 1);
-      lL.position.x = -.41 - .78*open; lR.position.x = .41 + .78*open;
-      const wk = clamp((cyc-.18)/.6, 0, 1);
-      walker.position.set(0, 0, -.9 + 1.9*wk);
-      walker.visible = cyc > .16 && cyc < .82;
-      beam.material.opacity = (walker.visible && Math.abs(walker.position.z) < .25) ? .32 : .1;
-    });
-    return g;
-  });
-
   /* Panel arah (sign) */
   const S1 = makeSign();
-  place('sign', 6.4, -3, 1.6, 3.35, () => {
+  place('sign', 2.3, -.6, 1.6, 3.35, () => {
     const g = new THREE.Group();
     mesh(C(.07,.07,2.85,12), metal, 0,1.42,-.7, g);
     mesh(B(3.1,.06,.9), metal, 0,2.86,-.3, g);
@@ -514,63 +458,27 @@ function buildAlat(){
     return g;
   });
 
-  /* Bogie with air-spring load sensor */
-  place('load', -4.4, 2.4, 1.6, 1.85, () => {
-    const g = new THREE.Group();
-    const steel = mat(0x3a4245,{metalness:.6,roughness:.45}), rubber = mat(0x141617,{roughness:.9}), wheel = mat(0x737c7f,{metalness:.8,roughness:.3});
-    for(const sx of [-.8,.8]){
-      for(const sz of [-.55,.55]){ const w = mesh(C(.33,.33,.1,28), wheel, sx,.33,sz, g); w.rotation.x = Math.PI/2; }
-      const a = mesh(C(.05,.05,1.3,10), steel, sx,.33,0, g); a.rotation.x = Math.PI/2;
-    }
-    for(const sz of [-.72,.72]) mesh(B(2.2,.22,.12), steel, 0,.42,sz, g);
-    mesh(B(.32,.2,1.56), steel, 0,.46,0, g);
-    const springs = [];
-    for(const sz of [-.6,.6]){
-      const sp = new THREE.Group(); sp.position.set(0,.56,sz); g.add(sp);
-      mesh(C(.24,.24,.05,24), steel, 0,.02,0, sp);
-      for(const y of [.13,.27]){ const t = mesh(new THREE.TorusGeometry(.2,.075,10,28), rubber, 0,y,0, sp); t.rotation.x = Math.PI/2; }
-      mesh(C(.26,.26,.05,24), steel, 0,.4,0, sp);
-      springs.push(sp);
-    }
-    const body = mesh(B(2.6,.14,1.9), mat(0xbfc7c9,{metalness:.4,roughness:.4,transparent:true,opacity:.82}), 0,1.03,0, g);
-    const tr = mesh(C(.06,.06,.18,16), mat(0xf08a24,{roughness:.4}), .34,.66,.6, g);
-    const curve = new THREE.CatmullRomCurve3([V3(.34,.75,.6),V3(.6,.92,.85),V3(1.0,.78,.98),V3(1.12,.56,.98)]);
-    mesh(new THREE.TubeGeometry(curve, 24, .018, 6), mat(0x202020), 0,0,0, g, false);
-    mesh(B(.24,.18,.1), mat(0x1b2224,{metalness:.4}), 1.12,.48,.98, g);
-    mesh(B(.04,.03,.01), basic(0x2bd47a), 1.18,.52,1.035, g, false);
-    A.anims.push(t => {
-      const s = .5 + .5*Math.sin(t*.9);
-      body.position.y = 1.03 - .06*s;
-      springs.forEach(sp => sp.scale.y = 1 - .15*s);
-      tr.material.emissive = new THREE.Color(0xf08a24).multiplyScalar(.25*s);
-    });
-    return g;
-  });
-
-  /* LED floor strip + PSD indicator */
-  place('strip', 0, 2.4, 1.75, 2.55, () => {
+  /* Door indicator light above the PSD */
+  place('strip', -2.2, -.6, 1.75, 3.0, () => {
     const g = new THREE.Group();
     mesh(B(3.0,.12,1.9), mat(0xa4acaa,{roughness:.85}), 0,.06,0, g);
     mesh(B(.05,.012,1.0), basic(0xf2f2ee), -.35,.126,.35, g, false);
     mesh(B(.05,.012,1.0), basic(0xf2f2ee), .35,.126,.35, g, false);
-    mesh(B(2.8,.02,.1), mat(0x1b2224), 0,.125,-.38, g, false);
-    const led = mesh(B(2.7,.03,.05), basic(HEX.go), 0,.135,-.38, g, false);
-    const glow = mesh(new THREE.PlaneGeometry(2.9,.55), basic(HEX.go,{transparent:true,opacity:.35,blending:THREE.AdditiveBlending,depthWrite:false}), 0,.14,-.38, g, false);
-    glow.rotation.x = -Math.PI/2;
     mesh(B(3.0,1.6,.05), mat(0x9fbcc2,{transparent:true,opacity:.35,roughness:.05}), 0,.92,-.85, g);
-    mesh(B(3.0,.26,.12), mat(0x1b2224,{metalness:.3}), 0,1.84,-.85, g);
-    const ind = mesh(B(.9,.1,.02), basic(HEX.go), 0,1.84,-.78, g, false);
+    mesh(B(3.0,.34,.12), mat(0x1b2224,{metalness:.3}), 0,1.86,-.85, g);
+    const ind = mesh(B(1.3,.2,.02), basic(HEX.go), 0,1.86,-.78, g, false);
+    const halo = mesh(new THREE.PlaneGeometry(1.9,.7), basic(HEX.go,{transparent:true,opacity:.14,blending:THREE.AdditiveBlending,depthWrite:false}), 0,1.86,-.76, g, false);
     [[-.35,.25],[.35,.55]].forEach(([x,z]) => { const p = makePerson(.55); p.position.set(x,.12,z); g.add(p); });
     const seq = ['go','go','mid','stop','mid'];
     A.anims.push(t => {
       const st = seq[Math.floor(t/2.2) % seq.length];
-      led.material.color.setHex(HEX[st]); glow.material.color.setHex(HEX[st]); ind.material.color.setHex(HEX[st]);
+      ind.material.color.setHex(HEX[st]); halo.material.color.setHex(HEX[st]);
     });
     return g;
   });
 
   /* Edge AI box */
-  place('edge', 4.4, 2.4, 1.3, 1.45, () => {
+  place('edge', 6.5, -.6, 1.3, 1.45, () => {
     const g = new THREE.Group();
     const body = mat(0x2a3133,{metalness:.5,roughness:.45});
     mesh(B(1.3,.42,.85), body, 0,.21,0, g);
@@ -675,25 +583,15 @@ function buildMTR(){
   });
   mesh(B(25-x0,2.2,.06), glassM, x0 + (25-x0)/2,1.12,-2.55, s, false);
 
-  // zones: floor LED strip, glow, header indicator, queue markings, ToF sensor, labels
-  const tofGroups = [];
+  // zones: door indicator light, queue markings, labels
   for(let i=0;i<4;i++){
     const cx = SIM.carX[i];
-    const strip = mesh(B(9.0,.02,.12), basic(HEX.off), cx,.012,-2.05, s, false);
-    const glow = mesh(new THREE.PlaneGeometry(9.3,.9), basic(HEX.off,{transparent:true,opacity:.3,blending:THREE.AdditiveBlending,depthWrite:false}), cx,.025,-2.05, s, false);
-    glow.rotation.x = -Math.PI/2;
-    const ind = mesh(B(2.2,.2,.04), basic(HEX.off), cx,2.42,-2.38, s, false);
+    const ind = mesh(B(2.6,.26,.04), basic(HEX.off), cx,2.42,-2.38, s, false);
     for(const dx of SIM.doorX[i]) for(const off of [-.32,.32])
       mesh(B(.05,.012,1.4), basic(0xf2f2ee), dx+off,.008,-1.15, s, false);
-    // ToF above zone
-    const tg = new THREE.Group(); tg.position.set(cx,0,-.6); s.add(tg);
-    mesh(B(.06,.2,.06), metal, 0,4.18,-.4, tg);
-    mesh(B(.7,.14,.42), mat(0xf4f5f4,{roughness:.35}), 0,4.05,-.3, tg);
-    mesh(new THREE.ConeGeometry(2.6, 3.95, 32, 1, true), basic(0x3cc2b5,{transparent:true,opacity:.05,side:THREE.DoubleSide,depthWrite:false}), 0,2.0,-.3, tg, false);
-    tofGroups.push(tg);
     const zl = new THREE.Object3D(); zl.position.set(cx,2.9,.6); s.add(zl);
     const lab = addLabel('mtr', zl, '', {});
-    SIM.zones.push({q:[], strip, glow, ind, lab});
+    SIM.zones.push({q:[], ind, lab});
   }
   // CCTV on the gantry
   const cams = [];
@@ -723,12 +621,9 @@ function buildMTR(){
 
   // device labels
   addLabel('mtr', cams[1], DEV.cctv.name, {key:'cctv', off:[0,.5,0]});
-  addLabel('mtr', tofGroups[2], DEV.tof.name, {key:'tof', off:[0,4.6,-.3]});
-  addLabel('mtr', SIM.cars[1].apc, DEV.apc.name, {key:'apc', off:[0,.45,0]});
-  addLabel('mtr', SIM.cars[1].spring, DEV.load.name, {key:'load', off:[0,.1,1.2]});
   addLabel('mtr', cab, DEV.edge.name, {key:'edge', off:[0,2.6,0]});
   addLabel('mtr', sg, DEV.sign.name, {key:'sign', off:[0,3.6,0]});
-  addLabel('mtr', SIM.zones[0].strip, DEV.strip.name, {key:'strip', off:[-2.5,.15,.4]});
+  addLabel('mtr', SIM.zones[0].ind, DEV.strip.name, {key:'strip', off:[0,.45,0]});
   const exitL = new THREE.Object3D(); exitL.position.set(ESC_X,3.4,5.5); s.add(exitL);
   addLabel('mtr', exitL, 'Eskalator keluar', {});
   const corrL = new THREE.Object3D(); corrL.position.set(CORR_X,1.2,15); s.add(corrL);
@@ -736,12 +631,9 @@ function buildMTR(){
 
   SIM.items = {
     cctv:{focus:V3(0,3,0), view:[V3(6,7,10)]},
-    tof:{focus:V3(SIM.carX[2],3,-.9)},
-    apc:{focus:V3(SIM.doorX[1][1],2,-3.4)},
-    load:{focus:V3(SIM.carX[1]-3.3,-.7,-3.6)},
     edge:{focus:V3(-21.6,1.2,6.4)},
     sign:{focus:V3(CORR_X,2.6,7.9)},
-    strip:{focus:V3(SIM.carX[0],.2,-2.0)}
+    strip:{focus:V3(SIM.carX[0],2.2,-2.4)}
   };
   return s;
 }
@@ -751,7 +643,7 @@ function buildTrain(s){
   const bodyM = mat(0xd5dadb,{metalness:.55,roughness:.35}), winM = mat(0x13202a,{roughness:.12,metalness:.6});
   const stripeM = mat(0xb9343c,{roughness:.5}), doorM = mat(0xbcc3c5,{metalness:.5,roughness:.35});
   const under = mat(0x272c2e,{roughness:.8}), wheelM = mat(0x5b6366,{metalness:.8,roughness:.3});
-  const springM = mat(0xf08a24,{roughness:.4});
+  const springM = mat(0x3a4245,{roughness:.6,metalness:.4});
   for(let i=0;i<4;i++){
     const car = new THREE.Group(); car.position.x = SIM.carX[i]; t.add(car);
     mesh(B(9.4,2.9,3.0), bodyM, 0,1.25,0, car);
@@ -768,22 +660,18 @@ function buildTrain(s){
       for(const sz of [-1.0,1.0]){ const sp = mesh(C(.22,.22,.28,16), springM, bx,-.62,sz, car); if(bx<0 && sz>0) spring = sp; }
     }
     const leaves = [];
-    let apc = null;
     for(const d of [-3,0,3]){
       const L = mesh(B(.68,2.05,.06), doorM, d-.34,1.0,1.52, car, false);
       const R = mesh(B(.68,2.05,.06), doorM, d+.34,1.0,1.52, car, false);
       for(const leaf of [L,R]) mesh(B(.38,.6,.01), winM, 0,.45,.035, leaf, false);
       leaves.push({d, L, R});
-      const a = mesh(B(.5,.08,.1), mat(0x1b2224), d,2.18,1.56, car, false);
-      mesh(B(.05,.03,.01), basic(0x2bd47a), d+.18,2.18,1.615, car, false);
-      if(d===0) apc = a;
     }
     const roof = mesh(B(8.4,.08,.5), basic(HEX.go), 0,2.98,0, car, false);
     if(i>0) mesh(B(.5,2.4,2.2), under, -4.95,1.2,0, car);
     if(i===0) mesh(B(.35,2.6,2.8), winM, -4.85,1.35,0, car);
     if(i===3) mesh(B(.35,2.6,2.8), winM, 4.85,1.35,0, car);
     const lab = addLabel('mtr', car, '', {off:[0,3.5,0]});
-    SIM.cars.push({car, leaves, roof, apc, spring, lab});
+    SIM.cars.push({car, leaves, roof, spring, lab});
   }
 }
 
@@ -893,8 +781,7 @@ function computeLights(){
   }
   SIM.zones.forEach((z,i) => {
     const h = HEX[SIM.lights[i]];
-    z.strip.material.color.setHex(h); z.glow.material.color.setHex(h); z.ind.material.color.setHex(h);
-    z.glow.material.opacity = SIM.ai ? .35 : .08;
+    z.ind.material.color.setHex(h);
   });
   drawSign(SIM.sign, SIM.lights, SIM.best, ARROWS);
 }
@@ -902,9 +789,9 @@ function computeLights(){
 /* phases */
 const PHASE_TXT = {
   gap:'Menunggu kereta · AI memprediksi ruang di kereta berikut',
-  arrive:'Kereta tiba · data beban tiap gerbong sudah diterima',
+  arrive:'Kereta tiba · data beban tiap gerbong diterima dari sistem kereta MTR',
   open:'Pintu dibuka',
-  alight:'Penumpang turun · dihitung sensor pintu (APC)',
+  alight:'Penumpang turun · dihitung kamera CCTV',
   board:'Penumpang naik dari tiap zona',
   close:'Pintu ditutup',
   depart:'Kereta berangkat · hasil dicatat ke data historis'
@@ -980,7 +867,7 @@ for(let n=0;n<34;n++){
 computeLights(); go('gap'); SIM.t = 4;
 
 const VIEWS = {
-  alat:{pos:V3(0,9,16.5), tgt:V3(0,1.2,-.4)},
+  alat:{pos:V3(0,7.4,13.8), tgt:V3(0,1.3,-.6)},
   overview:{pos:V3(6,25,31), tgt:V3(0,0,-.5)},
   corridor:{pos:V3(17,6.5,23), tgt:V3(8,1.6,5)},
   platform:{pos:V3(-24,6.5,9), tgt:V3(-8,1,-1.5)},
@@ -1020,7 +907,7 @@ function select(key, fly){
     if(fly) flyToTarget(A.items[key].focus, 6);
   } else {
     $('#detail-mtr').innerHTML = detailHTML(key, true);
-    if(fly) flyToTarget(SIM.items[key].focus, key==='load' || key==='apc' ? 8 : 12);
+    if(fly) flyToTarget(SIM.items[key].focus, 12);
   }
 }
 $('#devlist').innerHTML = ORDER.map(k => `<button class="devbtn" data-key="${k}" aria-pressed="false">${DEV[k].name}</button>`).join('');

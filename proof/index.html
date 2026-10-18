@@ -115,8 +115,8 @@ code{font-family:var(--f-mono);font-size:.85em;background:var(--bg);border:1px s
         <div><h3>3D platform</h3><span class="go">Open live demo ↗</span><p>The same model in 3D: tunnels with signs, door lights, people arriving, queuing and getting off. Toggle the AI on and off.</p></div>
       </a>
       <div class="link">
-        <img src="screens/devices3d.png" alt="3D models of the hardware: CCTV camera, overhead sensor, door counter, corridor sign, load sensor, LED strip, edge AI unit">
-        <div><h3>Hardware concept</h3><p>The sensors and signs the system needs: CCTV people counting, overhead 3D sensor, door counter, car load sensor, floor LED strip, corridor sign and an edge AI unit.</p></div>
+        <img src="screens/devices3d.png" alt="3D models of the four devices: CCTV camera, door indicator light, corridor sign and edge AI unit">
+        <div><h3>Hardware: only 4 devices</h3><p>CCTV camera with AI counting, corridor sign, door indicator light and an edge AI unit. Train load and gate data come from systems MTR already runs.</p></div>
       </div>
     </div>
   </section>
@@ -150,8 +150,8 @@ code{font-family:var(--f-mono);font-size:.85em;background:var(--bg);border:1px s
     <div class="shots">
       <figure><img src="screens/sim2d.png" alt="2D simulator at 09:25 with live comparison scores"><figcaption>2D simulator at 09:25. Left: doors 2A, 3A and 6A overflow beside the tunnels. Right: the AI turns those doors red and sends people to 1A, 4A, 7A and 8A.</figcaption></figure>
       <figure><img src="screens/platform3d.png" alt="3D platform overview"><figcaption>3D platform. Tunnel signs show the same 8 lights as the doors, so passengers choose before they reach the platform.</figcaption></figure>
-      <figure><img src="screens/station3d.png" alt="3D station showing sensors placed along the platform"><figcaption>Sensor placement along a platform: CCTV with AI counting, overhead 3D sensors and floor LED guidance per zone.</figcaption></figure>
-      <figure><img src="screens/devices3d.png" alt="3D hardware components"><figcaption>Hardware components of the system.</figcaption></figure>
+      <figure><img src="screens/station3d.png" alt="3D station showing the camera, door lights and corridor sign along the platform"><figcaption>Where the devices go: one CCTV camera counts the queues and the people getting off, door lights sit above each zone, and the corridor sign guides people before they reach the platform.</figcaption></figure>
+      <figure><img src="screens/devices3d.png" alt="The four hardware devices"><figcaption>The four devices we build. In the hackathon prototype they are a webcam, a laptop, an ESP32 and a WS2812B LED strip.</figcaption></figure>
     </div>
   </section>
 
@@ -171,7 +171,7 @@ code{font-family:var(--f-mono);font-size:.85em;background:var(--bg);border:1px s
         <li><b>Anti-herding:</b> followers are spread across green doors in proportion to spare room, so a green door never becomes the next hotspot.</li>
       </ul></div>
       <div><h3>Honest limits of this prototype</h3><ul>
-        <li>All data is simulated. A pilot would use CCTV people counting, car load sensors and gate data from MTR.</li>
+        <li>All data is simulated. A pilot adds only 4 devices (camera, corridor sign, door lights, edge unit) and reuses MTR's existing train load sensors, CCTV and gate data.</li>
         <li>Passengers without guidance are modelled as queuing near their tunnel. Real behaviour should be measured in a pilot.</li>
         <li>The forecast learns per train within a session. The production design stores data and averages each day-and-hour slot over recent weeks.</li>
         <li>The lights advise passengers and staff. They do not replace staff, platform screen doors or safety systems.</li>

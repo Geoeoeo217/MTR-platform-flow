@@ -11,7 +11,7 @@ At rush hour, passengers bunch up at the platform doors closest to the tunnel th
 | 2D simulator: side-by-side comparison with live scores | https://claude.ai/artifact/VDGZh6gDjeEvW6bo8gvvN7 | `platform-flow/index.html` |
 | 3D platform: tunnels, door lights, passengers arriving and getting off | https://claude.ai/artifact/7P5CKX3KCayqxPtwfe7eoh | `platform-flow/3d.html` |
 | Prototype proof: results, charts, screenshots | https://claude.ai/artifact/CMrWcmpMjsszJ2mhDsddwe | `proof/index.html` |
-| Hardware concept in 3D | | `model-3d-peron.html` |
+| Hardware concept in 3D (4 devices) | | `model-3d-peron.html` |
 
 Each file runs offline in any browser: double-click it, or use VS Code's Live Server. The 3D pages need internet access to load Three.js.
 
@@ -35,6 +35,23 @@ python3 proof/run_benchmark.py
 
 The script pulls the exact model code out of `platform-flow/index.html`, so the benchmark and the demo cannot drift apart.
 
+## Hardware
+
+Only 4 new devices are needed. Everything else comes from systems MTR already runs.
+
+| We build | Job | Hackathon prototype |
+|---|---|---|
+| CCTV camera + AI | Counts people queuing at each door and people getting off | Webcam + YOLO person detection |
+| Edge AI unit | Runs the forecast and picks the light colours | Laptop (or Raspberry Pi 5) |
+| Corridor sign | Shows which doors have room, before the platform | ESP32 + WS2812B LED strip |
+| Door indicator light | Green, amber or red above each platform door | Same ESP32 + a short LED strip |
+
+| Reused from MTR | Used for |
+|---|---|
+| Train load-weighing sensors (already used for braking) | Load per car of the approaching train |
+| Existing platform CCTV | Can replace our camera |
+| Load change before and after the doors open, plus gate data | Building the historical alighting table |
+
 ## How it works
 
 1. **Collect**: queue count per door (CCTV), load per car of the approaching train (car load sensors), and historical alighting by station, day and hour.
@@ -45,7 +62,7 @@ The script pulls the exact model code out of `platform-flow/index.html`, so the 
 
 ## Limits
 
-- All data is simulated. A pilot would use MTR's CCTV people counting, car load sensors and gate data.
+- All data is simulated. A pilot would add the 4 devices above and reuse MTR's train load sensors, CCTV and gate data.
 - Passengers without guidance are modelled as queuing near the tunnel they came out of. Real behaviour should be measured in a pilot.
 - The forecast learns per train within one session. The production design stores data and averages each day-and-hour slot over recent weeks.
 - The system advises passengers and staff. It does not replace staff, platform screen doors or any safety system.
