@@ -1,5 +1,5 @@
 <meta charset="utf-8">
-<title>Platform Flow Hardware</title>
+<title>Rail Flow AI Hardware</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -28,7 +28,7 @@
 [hidden]{display:none!important}
 html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 var(--body)}
-.app{height:100%;display:flex;flex-direction:column}
+.app{height:calc(100% - var(--rfnav-h, 0px));display:flex;flex-direction:column}
 .top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 24px;
   padding-block:14px 12px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .brand{display:flex;align-items:center;gap:12px;min-width:0}
@@ -132,8 +132,8 @@ td small{display:block;font:400 10.5px/1.2 var(--mono);color:var(--muted);margin
     <div class="brand">
       <div class="mark" aria-hidden="true"><i></i><i></i><i></i></div>
       <div>
-        <h1>Platform Flow Hardware</h1>
-        <p class="sub">AI-Assisted Predictive Passenger Distribution · visual prototype</p>
+        <h1>Hardware</h1>
+        <p class="sub">Rail Flow AI · program 4 of 5 · 3D concept of the devices</p>
       </div>
     </div>
     <nav class="tabs" role="tablist" aria-label="View">
@@ -195,7 +195,7 @@ td small{display:block;font:400 10.5px/1.2 var(--mono);color:var(--muted);margin
         <div class="sec">
           <span class="eyebrow">Queue zones · next train</span>
           <table>
-            <thead><tr><th>Zone</th><th>Queue</th><th>Predicted room<br>(cap − load + off)</th><th>Light</th></tr></thead>
+            <thead><tr><th>Door</th><th>Queue</th><th>Predicted room<br>(cap − load + off)</th><th>Light</th></tr></thead>
             <tbody id="zrows"></tbody>
           </table>
           <p class="note">Predicted room = car capacity − load from MTR's train data + forecast of people getting off from historical data (Monday 09:00). The light compares the queue with that room.</p>
@@ -212,7 +212,7 @@ td small{display:block;font:400 10.5px/1.2 var(--mono);color:var(--muted);margin
               </div>
             </div>
           </div>
-          <p class="note">Turn the AI off for a few trains, then back on. Without guidance, people pile up in the zones nearest the corridor (zones 3–4).</p>
+          <p class="note">Turn the AI off for a few trains, then back on. Without guidance, people pile up at the doors nearest the corridor (3A–4A).</p>
         </div>
         <div class="sec">
           <span class="eyebrow">Camera</span>
@@ -352,15 +352,15 @@ function drawSign(S, states, best, arrows){
     ctx.fillStyle = CSS[st]; rr(ctx,x,y,w,h,18); ctx.fill();
     const ink = (st==='go'||st==='mid') ? '#08130f' : '#ffffff';
     ctx.fillStyle = ink;
-    ctx.font = '700 128px "Barlow Condensed","Arial Narrow",sans-serif';
     ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
-    ctx.fillText(String(i+1), x+22, y+132);
+    ctx.font = '700 104px "Barlow Condensed","Arial Narrow",sans-serif';
+    ctx.fillText(`${i+1}A`, x+18, y+128);
     ctx.font = '700 96px "Barlow Condensed","Arial Narrow",sans-serif';
     ctx.textAlign = 'right';
     ctx.fillText(arrows[i], x+w-18, y+124);
     ctx.textAlign = 'left';
     ctx.font = '700 30px "IBM Plex Sans",Arial,sans-serif';
-    const t = st==='off' ? 'ZONE '+(i+1) : (i===best ? '★ BEST' : STATE_TXT[st].toUpperCase());
+    const t = st==='off' ? 'DOOR '+(i+1)+'A' : (i===best ? '★ BEST' : STATE_TXT[st].toUpperCase());
     ctx.fillText(t, x+22, y+h-26);
   }
   S.tex.needsUpdate = true;
@@ -824,7 +824,7 @@ function updateSim(dt){
 /* UI */
 function buildRows(){
   $('#zrows').innerHTML = [0,1,2,3].map(i => `<tr>
-    <td><span class="zname"><span class="chip" id="zc${i}"></span>Zone ${i+1}</span><small>Car ${i+1}</small></td>
+    <td><span class="zname"><span class="chip" id="zc${i}"></span>${i+1}A</span><small>Car ${i+1}</small></td>
     <td class="num" id="zq${i}">0</td>
     <td class="num"><span id="zf${i}">0</span><small id="zx${i}"></small></td>
     <td><span class="state" id="zs${i}">–</span></td></tr>`).join('');
@@ -838,7 +838,7 @@ function updateUI(){
     const st = SIM.lights[i];
     $('#zc'+i).style.background = `var(--${st})`;
     $('#zs'+i).textContent = st==='off' ? 'Off' : (i===SIM.best ? 'Best' : STATE_TXT[st]);
-    SIM.zones[i].lab.el.innerHTML = `<span class="dot" style="background:${CSS[st]}"></span><b>Zone ${i+1}</b> · ${q} queuing`;
+    SIM.zones[i].lab.el.innerHTML = `<span class="dot" style="background:${CSS[st]}"></span><b>${i+1}A</b> · ${q} queuing`;
   });
   SIM.cars.forEach((c,i) => { c.lab.el.innerHTML = `Car ${i+1} · ${Math.round(SIM.trainLoad[i]/CAP*100)}%`; });
   const mean = Q.reduce((a,b)=>a+b,0)/4;
@@ -989,3 +989,4 @@ if(current === 'devices') camera.position.copy(saved.devices.pos); else camera.p
 updateUI(); loop();
 })();
 </script>
+<script src="assets/nav.js"></script>

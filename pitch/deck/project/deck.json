@@ -2,7 +2,7 @@
   "v": 4,
   "createdOnFiles": {"v": 1, "at": "2026-10-18T11:15:00Z"},
   "lists": "css",
-  "title": "Admiralty Platform Flow",
+  "title": "Rail Flow AI",
   "order": ["cover", "problem", "solution", "how", "ai", "prototype", "results", "hardware", "pilot", "close"],
   "sections": {
     "s1": {"description": "The problem: rush-hour crowds bunch at a few platform doors", "start": "cover"},

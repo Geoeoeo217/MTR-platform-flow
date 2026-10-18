@@ -15,7 +15,7 @@ export class VirtualCam {
     this.getState = getState;    // () => ({ phase, lights: {door: 'g'|'y'|'r'}, onboard: {door: n}, forecastOff: {door: n}, capacity })
     this.doors = doors;
     this.canvas = document.createElement('canvas');
-    this.canvas.width = 960; this.canvas.height = 540;
+    this.canvas.width = 1280; this.canvas.height = 720;
     this.people = []; this.lastPhase = null; this.spawnT = 0; this.trainX = -60; this.boardAt = 0;
     this._build();
   }
@@ -24,14 +24,15 @@ export class VirtualCam {
 
   _build() {
     const r = this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true, preserveDrawingBuffer: true });
-    r.setPixelRatio(1); r.setSize(960, 540, false);
+    r.setPixelRatio(1); r.setSize(1280, 720, false);
     const s = this.scene = new THREE.Scene();
     s.background = new THREE.Color(0xc9cfcc);
     s.fog = new THREE.Fog(0xc9cfcc, 30, 60);
     // Camera mounted high on the back wall, looking along and across the platform
-    this.camera = new THREE.PerspectiveCamera(64, 16 / 9, 0.1, 100);
-    this.camera.position.set(-3.5, 5.2, 10.2);
-    this.camera.lookAt(0.4, 0, 1.2);
+    // Chosen so every door's queue area is inside the frame with a margin, with the far doors as large as possible
+    this.camera = new THREE.PerspectiveCamera(50, 16 / 9, 0.1, 100);
+    this.camera.position.set(-4, 6, 12);
+    this.camera.lookAt(-1, 0, 1.6);
     this.camera.updateMatrixWorld();
     s.add(new THREE.HemisphereLight(0xffffff, 0x8a8f8c, 0.9));
     const sun = new THREE.DirectionalLight(0xffffff, 0.55); sun.position.set(-4, 10, 8); s.add(sun);
@@ -39,10 +40,10 @@ export class VirtualCam {
     const mat = c => new THREE.MeshLambertMaterial({ color: c });
     const box = (w, h, d, m, x, y, z) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(x, y, z); s.add(o); return o; };
     const W = this.doors * DOOR_GAP + 16;
-    box(W, 0.2, 11, mat(0x9aa19d), 0, -0.1, 5.3);                       // platform floor
+    box(W, 0.2, 14.2, mat(0x9aa19d), 0, -0.1, 6.9);                     // platform floor (deep enough for the camera position)
     box(W, 0.02, 0.3, mat(0xe2c23a), 0, 0.01, 0.35);                    // yellow safety strip
     box(W, 0.4, 5, mat(0x4b5250), 0, -1.4, -2.6);                       // track bed
-    box(W, 7, 0.3, mat(0xdfe2de), 0, 3.3, 11);                          // back wall
+    box(W, 7, 0.3, mat(0xdfe2de), 0, 3.3, 14);                          // back wall, behind the camera
     box(W, 7, 0.3, mat(0x9aa29f), 0, 3.3, -5.2);                        // far wall behind the track
     for (let i = 0; i < 6; i++) box(4, 1.6, 0.05, mat(0x4f7d8a), -12 + i * 6, 2.4, -5.0);   // wall panels
     // Platform screen doors with an opening at every door, and a light above each
@@ -97,7 +98,7 @@ export class VirtualCam {
   _remove(p) { this.scene.remove(p.g); p.dead = true; }
 
   queueOf(d) { return this.people.filter(p => p.door === d && (p.state === 'queue' || p.state === 'toQueue')); }
-  _slot(d, k) { const side = k % 2 ? 0.5 : -0.5; return new THREE.Vector3(this.doorX(d) + side, 0, 0.9 + Math.floor(k / 2) * 0.62); }
+  _slot(d, k) { const side = k % 2 ? 0.6 : -0.6; return new THREE.Vector3(this.doorX(d) + side, 0, 0.9 + Math.floor(k / 2) * 0.8); }   // about 0.8 m between people, like a real queue
 
   _spawn(st) {
     if (this.people.filter(p => !p.dead).length >= MAX_PEOPLE) return;

@@ -5,6 +5,21 @@
 //   exit line (door N)   → people crossing the line downward, i.e. stepping off the train onto the platform
 // The train is assumed to be at the top of the image, so "downward" means leaving the train.
 
+// The same person can be found by the full-frame pass and a half-frame pass: keep the most confident box
+// and drop any other that overlaps it heavily or sits mostly inside it
+function mergeBoxes(boxes) {
+  const kept = [];
+  for (const b of boxes.sort((a, c) => c.score - a.score)) {
+    const dup = kept.some(k => {
+      const ix = Math.max(0, Math.min(b.x + b.w, k.x + k.w) - Math.max(b.x, k.x)), iy = Math.max(0, Math.min(b.y + b.h, k.y + k.h) - Math.max(b.y, k.y));
+      const inter = ix * iy, small = Math.min(b.w * b.h, k.w * k.h);
+      return inter / (b.w * b.h + k.w * k.h - inter) > 0.45 || inter / small > 0.7;
+    });
+    if (!dup) kept.push(b);
+  }
+  return kept;
+}
+
 // Is point (x, y) inside polygon pts? (ray casting)
 function inPoly(x, y, pts) {
   let inside = false;
@@ -28,6 +43,7 @@ export class Vision {
     this.exits = {};               // door -> people counted crossing its exit line since reset
     this.counting = false;         // exit lines only count while doors are open
     this.minScore = 0.45;
+    this.detail = true;            // also scan each half of the frame (finds far and edge people; about 3x the work)
     this.tool = { kind: 'queue', door: 1 };
     this.drag = null;
     this.lastMs = 0;
@@ -56,13 +72,29 @@ export class Vision {
     for (let i = 0; i < doors; i++) this.zones.push({ kind: 'queue', door: i + 1, x: i / doors + 0.01, y: 0.4, w: 1 / doors - 0.02, h: 0.58 });
   }
 
+  // One detection pass over the whole frame, plus (in detail mode) one over each overlapping half.
+  // The model shrinks every image to a small square, so people far away or near the edges become a few
+  // pixels and are missed; scanning each half separately makes them about twice as large to the model.
   async step() {
     if (!this.ready) return null;
     const t0 = performance.now();
     const [W, H] = this.size();
-    const preds = await this.model.detect(this.media, 40, this.minScore);
+    const found = [];
+    const add = (preds, x0, y0, sw, sh) => { for (const p of preds) if (p.class === 'person')
+      found.push({ x: x0 + p.bbox[0] / sw, y: y0 + p.bbox[1] / sh, w: p.bbox[2] / sw, h: p.bbox[3] / sh, score: p.score }); };
+    add(await this.model.detect(this.media, 40, this.minScore), 0, 0, W, H);
+    if (this.detail) {
+      const c = this._tile || (this._tile = document.createElement('canvas')), g = c.getContext('2d');
+      for (const [fx0, fx1] of [[0, 0.56], [0.44, 1]]) {
+        const sx = fx0 * W, sw = (fx1 - fx0) * W;
+        c.width = Math.round(sw); c.height = H;
+        g.drawImage(this.media, sx, 0, sw, H, 0, 0, c.width, c.height);
+        // boxes come back in tile pixels; convert to 0–1 of the whole frame
+        add(await this.model.detect(c, 40, this.minScore), fx0, 0, c.width / (fx1 - fx0), H);
+      }
+    }
+    this.persons = mergeBoxes(found);
     this.lastMs = performance.now() - t0;
-    this.persons = preds.filter(p => p.class === 'person').map(p => ({ x: p.bbox[0] / W, y: p.bbox[1] / H, w: p.bbox[2] / W, h: p.bbox[3] / H, score: p.score }));
     this._track();
     return this.counts();
   }

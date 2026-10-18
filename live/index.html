@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Platform Flow Live</title>
+<title>Rail Flow AI Live</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 /* Layout: a station operator console. Camera + lights on top, the AI's numbers per door below, then GenAI and learning. One dark control-room look. */
@@ -112,11 +112,11 @@ details.more[open] summary{margin-bottom:10px}
 <div class="wrap">
   <header>
     <div style="display:grid;gap:6px">
-      <span class="eyebrow"><span class="sig"><i></i><i></i><i></i></span>Live system · camera AI → capacity → door recommendation → guidance</span>
-      <h1>Platform Flow Live</h1>
+      <span class="eyebrow"><span class="sig"><i></i><i></i><i></i></span>Rail Flow AI · program 1 of 5 · camera AI → capacity → door recommendation → guidance</span>
+      <h1>Live System</h1>
       <p class="status" id="status">Starting…</p>
     </div>
-    <div class="bar"><a href="../" style="color:var(--accent);font-size:.88rem">← All demos</a><button type="button" id="openSettings">Settings</button></div>
+    <div class="bar"><button type="button" id="openSettings">Settings</button></div>
   </header>
 
   <section class="demo" aria-label="Run the demo">
@@ -241,6 +241,7 @@ details.more[open] summary{margin-bottom:10px}
         <label>Doors <input type="number" id="setDoors" min="2" max="8"></label>
         <label>Before/after assumption: share of passengers who follow the lights (%) <input type="number" id="setFollow" min="0" max="100"></label>
         <label>Hold a light at least (seconds) before it relaxes <input type="number" id="setHold" min="0" max="60"></label>
+        <label class="check"><input type="checkbox" id="setDetail"> Detail mode: also scan each half of the camera image (finds far and edge people, about 3× the work)</label>
       </div>
     </details>
     <div class="bar" style="justify-content:flex-end"><button type="button" id="cancelSettings">Cancel</button><button type="submit" class="primary">Save</button></div>
@@ -251,5 +252,6 @@ details.more[open] summary{margin-bottom:10px}
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
 <script type="module" src="js/app.js"></script>
+<script src="../assets/nav.js"></script>
 </body>
 </html>

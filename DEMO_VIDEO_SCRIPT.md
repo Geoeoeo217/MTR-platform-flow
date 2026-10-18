@@ -20,7 +20,7 @@ To add your voice, click **Options** in the ⇧⌘5 toolbar and pick your microp
 
 | Time | Scene | Voiceover (optional) |
 |---|---|---|
-| 0:00 | Title card | "This is Admiralty Platform Flow, our AI system for spreading passengers along MTR platforms." |
+| 0:00 | Title card | "This is Rail Flow AI, our AI system for spreading passengers along MTR platforms." |
 | 0:06 | 3D, inside Tunnel A | "At Admiralty, you can’t see the platform until you leave the tunnel. Our signs show which doors have room before you choose." |
 | 0:16 | 3D, no guidance | "Without guidance, everyone queues next to their tunnel. Doors 2A and 3A overflow while the far doors stay empty." |
 | 0:29 | 3D, AI lights on | "With our AI lights on, the same crowd spreads across all eight doors." |

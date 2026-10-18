@@ -1,4 +1,4 @@
-// Platform Flow Live: the end-to-end workflow, each stage feeding the next.
+// Rail Flow AI live system: the end-to-end workflow, each stage feeding the next.
 //   1 Input     → camera, uploaded media, virtual CCTV (simulated video), a demo scenario (simulated data) or manual entry
 //   2 Counts    → people queuing per door (camera AI, or the entered numbers) and people on board per car
 //   3 Capacity  → room per door = capacity − on board + forecast getting off
@@ -18,14 +18,15 @@ const LS = { get: (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?
 
 const PRESETS = {
   desk:    { capacity: 6,   queueMax: 5,  headway: 60,  dwell: 15 },
-  station: { capacity: 230, queueMax: 63, headway: 120, dwell: 25 },
+  station: { capacity: 230, queueMax: 140, headway: 120, dwell: 25 },   // queue area holds about 60% of a car load
 };
 
 // Demo scenarios: SIMULATED data, given as shares of car capacity so they work at both scales
 const SCENARIOS = {
   // Enough space overall, but people bunch at one end: the situation the lights are meant to fix
-  A: { name: 'Scenario A · morning rush', day: 0, hour: 9, min: 0, queue: [1.0, 0.85, 0.15, 0.05], onboard: [0.55, 0.65, 0.7, 0.35] },
-  B: { name: 'Scenario B · evening',      day: 4, hour: 18, min: 30, queue: [0.05, 0.2, 0.85, 1.0], onboard: [0.35, 0.75, 0.7, 0.55] },
+  // Each scenario gives one door of each colour state: red (over-full), amber (filling up), green (room)
+  A: { name: 'Scenario A · morning rush', day: 0, hour: 9, min: 0, queue: [1.0, 0.85, 0.5, 0.05], onboard: [0.55, 0.65, 0.55, 0.35] },
+  B: { name: 'Scenario B · evening',      day: 4, hour: 18, min: 30, queue: [0.05, 0.5, 0.85, 1.0], onboard: [0.35, 0.55, 0.75, 0.55] },
 };
 
 const SOURCES = {
@@ -39,7 +40,7 @@ const SOURCES = {
 };
 
 const saved = LS.get('pf-live-cfg', {});
-const cfg = Object.assign({ preset: 'desk', doors: 4, holdSec: 4, follow: 60, provider: 'ollama', ollamaUrl: 'http://localhost:11434', ollamaModel: 'qwen3-vl:2b-instruct', remember: false, auto: true }, saved);
+const cfg = Object.assign({ preset: 'desk', doors: 4, holdSec: 4, follow: 60, detail: true, provider: 'ollama', ollamaUrl: 'http://localhost:11434', ollamaModel: 'qwen3-vl:2b-instruct', remember: false, auto: true }, saved);
 Object.assign(cfg, PRESETS[cfg.preset] || PRESETS.desk);
 let apiKey = cfg.remember ? (LS.get('pf-live-key', '') || '') : '';
 
@@ -47,6 +48,7 @@ const vision = new Vision($('media'), $('overlay'));
 const forecaster = new Forecaster();
 const engine = new DecisionEngine();
 const genai = new GenAI();
+vision.detail = cfg.detail;
 
 const state = {
   source: 'none', scenario: null, edited: false,
@@ -488,7 +490,7 @@ function renderLearning() {
 function applySettingsForm() {
   $('setKey').value = apiKey; $('setRemember').checked = cfg.remember;
   $('setProvider').value = cfg.provider; $('setOllamaUrl').value = cfg.ollamaUrl; $('setOllamaModel').value = cfg.ollamaModel; showProviderFields();
-  $('setPreset').value = cfg.preset; $('setDoors').value = cfg.doors; $('setHold').value = cfg.holdSec; $('setFollow').value = cfg.follow;
+  $('setPreset').value = cfg.preset; $('setDoors').value = cfg.doors; $('setHold').value = cfg.holdSec; $('setFollow').value = cfg.follow; $('setDetail').checked = cfg.detail;
 }
 function readSettingsForm() {
   apiKey = $('setKey').value.trim(); cfg.remember = $('setRemember').checked;
@@ -500,6 +502,7 @@ function readSettingsForm() {
     if (state.source === 'virtual') startVirtual(); else { vision.defaultZones(doors); renderZoneList(); }
     if (state.source === 'scenario') startScenario(state.scenario); else if (state.source === 'manual') buildEntryPanel();
   }
+  cfg.detail = $('setDetail').checked; vision.detail = cfg.detail;
   cfg.holdSec = Math.min(60, Math.max(0, +$('setHold').value || 0)); cfg.follow = Math.min(100, Math.max(0, Math.round(+$('setFollow').value) || 0));
   LS.set('pf-live-key', cfg.remember ? apiKey : '');
   save(); connectAI();
@@ -509,5 +512,7 @@ function showProviderFields() { const p = $('setProvider').value; $('claudeField
 function save() { const { capacity, queueMax, headway, dwell, ...rest } = cfg; LS.set('pf-live-cfg', rest); }
 
 function escapeHtml(s) { return String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]); }
+
+window.railflow = { state, vision, cfg };   // for checking from the browser console
 
 init();

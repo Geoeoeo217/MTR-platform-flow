@@ -1,23 +1,26 @@
-# Admiralty Platform Flow
+# Rail Flow AI
 
-**AI-Assisted Predictive Passenger Distribution System for MTR Stations**: hackathon prototype.
+**AI-assisted predictive passenger distribution for MTR stations**: hackathon prototype.
 
-At rush hour, passengers bunch up at the platform doors closest to the tunnel they came out of, while other doors still have room. This system puts green, amber and red lights in the access tunnels and above each platform door. An AI model predicts how much room each door will have on the next train and steers passengers there **before** they pick a queue.
+At rush hour, passengers bunch up at the platform doors closest to the tunnel they came out of, while other doors still have room. Rail Flow AI puts green, amber and red lights in the access tunnels and above each platform door. It estimates how much room each door will have on the next train and steers passengers there **before** they pick a queue.
 
-## Live prototype
+## The five programs
 
-Start here: **https://geoeoeo217.github.io/MTR-platform-flow/**
+Start here: **https://geoeoeo217.github.io/MTR-platform-flow/** · every page has the same top bar linking all five.
 
-| What | Public link | File |
-|---|---|---|
-| **Live AI system**: input → counts → capacity → door recommendation → lights and announcement | https://geoeoeo217.github.io/MTR-platform-flow/live/ | `live/` |
-| 2D simulator: side-by-side comparison with live scores | https://geoeoeo217.github.io/MTR-platform-flow/platform-flow/ | `platform-flow/index.html` |
-| 3D platform: tunnels, door lights, passengers arriving and getting off | https://geoeoeo217.github.io/MTR-platform-flow/platform-flow/3d.html | `platform-flow/3d.html` |
-| Demo reel: self-playing video demo with captions | https://geoeoeo217.github.io/MTR-platform-flow/demo/ | `demo/index.html` |
-| Prototype proof: results, charts, screenshots | https://geoeoeo217.github.io/MTR-platform-flow/proof/ | `proof/index.html` |
-| Hardware concept in 3D (4 devices) | https://geoeoeo217.github.io/MTR-platform-flow/hardware-3d.html | `hardware-3d.html` |
+| # | Program | What it shows | Data | Link |
+|---|---|---|---|---|
+| 1 | **Live system** | The working pipeline: input → counts → capacity → door recommendation → lights and announcement. Webcam, video, virtual CCTV, demo scenarios or manual entry | Real AI detection on real or simulated video; labelled simulated scenarios | https://geoeoeo217.github.io/MTR-platform-flow/live/ |
+| 2 | **2D simulator** | Two identical 8-door platforms side by side, without and with guidance, with live scores | Simulated | https://geoeoeo217.github.io/MTR-platform-flow/platform-flow/ |
+| 3 | **3D platform** | The same model in 3D: tunnel signs, door lights, people arriving, queuing and getting off | Simulated | https://geoeoeo217.github.io/MTR-platform-flow/platform-flow/3d.html |
+| 4 | **Hardware** | The 4 devices to build and where they go in a station | Concept | https://geoeoeo217.github.io/MTR-platform-flow/hardware-3d.html |
+| 5 | **Proof** | 120-run benchmark of the guidance model, charts and screenshots | Simulated benchmark | https://geoeoeo217.github.io/MTR-platform-flow/proof/ |
 
-Each file runs offline in any browser: double-click it, or use VS Code's Live Server. The 3D pages need internet access to load Three.js.
+Also: a self-playing demo reel for recording the video (https://geoeoeo217.github.io/MTR-platform-flow/demo/) and the previous live system kept as a backup (https://geoeoeo217.github.io/MTR-platform-flow/archive/live-v1/).
+
+All five use the same door labels (1A, 2A, …), the same light colours (green = room, amber = limited, red = full) and the same room rule (capacity − on board + people getting off). The simulators model a full 8-door platform; the live system and hardware concept use 4 doors so they fit a laptop demo.
+
+Each page runs in any browser from the GitHub Pages link, or locally with `python3 -m http.server 8000` in this folder. The 3D pages and the camera AI need internet access to load their libraries.
 
 ## The live AI system (`live/`)
 
