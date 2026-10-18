@@ -1,0 +1,19 @@
+{
+  "v": 4,
+  "createdOnFiles": {"v": 1, "at": "2026-10-18T11:15:00Z"},
+  "lists": "css",
+  "title": "Admiralty Platform Flow",
+  "order": ["cover", "problem", "solution", "how", "ai", "prototype", "results", "hardware", "pilot", "close"],
+  "sections": {
+    "s1": {"description": "The problem: rush-hour crowds bunch at a few platform doors", "start": "cover"},
+    "s2": {"description": "The solution and how the AI decides", "start": "solution"},
+    "s3": {"description": "Working prototype and test results", "start": "prototype"},
+    "s4": {"description": "Hardware, pilot plan and close", "start": "hardware"}
+  },
+  "faces": {
+    "barlow-condensed": {"family": "Barlow Condensed", "href": "https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&display=swap"},
+    "ibm-plex-sans": {"family": "IBM Plex Sans", "href": "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap"},
+    "ibm-plex-mono": {"family": "IBM Plex Mono", "href": "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap"}
+  },
+  "designSystems": []
+}

@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Platform Flow Demo Reel</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a 16:9 stage that plays the real prototypes in sequence, with captions, for screen recording. Deliberately one dark look. */
+:root{--bg:#0b1110; --ink:#e4ecea; --muted:#a9bab5; --accent:#7ea2ee; --go:#2fd27a; --caution:#f2bd2c; --stop:#ff5a4e;
+  --f-display:"Barlow Condensed","Arial Narrow",sans-serif; --f-body:"IBM Plex Sans",system-ui,sans-serif; --f-mono:"IBM Plex Mono",ui-monospace,monospace; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0;background:#000;color:var(--ink);font-family:var(--f-body);overflow:hidden}
+.stage{position:absolute;inset:0;margin:auto;width:min(100vw,177.78vh);height:min(56.25vw,100vh);background:var(--bg);overflow:hidden}
+iframe{position:absolute;inset:0;width:100%;height:100%;border:0;opacity:0;transition:opacity .6s;background:var(--bg)}
+iframe.on{opacity:1}
+.card{position:absolute;inset:0;display:grid;place-content:center;gap:2.2vmin;text-align:center;padding:6vmin;background:var(--bg);opacity:0;transition:opacity .6s;pointer-events:none}
+.card.on{opacity:1}
+.sig{display:flex;gap:1.4vmin;justify-content:center}
+.sig i{width:3vmin;height:3vmin;border-radius:50%}
+.sig i:nth-child(1){background:var(--go)}.sig i:nth-child(2){background:var(--caution)}.sig i:nth-child(3){background:var(--stop)}
+.card h1{font-family:var(--f-display);font-weight:700;text-transform:uppercase;font-size:11vmin;line-height:.95;margin:0}
+.card p{font-size:3.4vmin;color:var(--muted);margin:0;max-width:60ch;margin-inline:auto}
+.card .mono{font-family:var(--f-mono);font-size:2.4vmin;letter-spacing:.12em;text-transform:uppercase}
+.cap{position:absolute;left:3vmin;right:3vmin;bottom:3vmin;background:rgba(8,12,11,.86);border:1px solid rgba(255,255,255,.12);border-radius:1.2vmin;padding:2vmin 2.6vmin;display:grid;gap:.8vmin;opacity:0;transform:translateY(1vmin);transition:opacity .4s,transform .4s;pointer-events:none}
+.cap.on{opacity:1;transform:none}
+.cap .step{font-family:var(--f-mono);font-size:1.9vmin;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.cap .txt{font-size:3.3vmin;line-height:1.3;font-weight:500}
+.bar{position:absolute;left:0;top:0;height:.6vmin;background:var(--accent);width:0}
+.start{position:absolute;inset:0;display:grid;place-content:center;gap:2.4vmin;text-align:center;background:rgba(11,17,16,.96);z-index:5}
+.start button{font:600 3vmin var(--f-body);color:#0b1110;background:var(--accent);border:0;border-radius:1vmin;padding:2vmin 4vmin;cursor:pointer}
+.start button:focus-visible{outline:3px solid var(--ink);outline-offset:4px}
+.start p{color:var(--muted);font-size:2.2vmin;margin:0;max-width:60ch}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <iframe id="f3d" title="3D platform" src="../platform-flow/3d.html"></iframe>
+  <iframe id="f2d" title="2D simulator" src="../platform-flow/index.html"></iframe>
+  <iframe id="fhw" title="Hardware model" src="../hardware-3d.html"></iframe>
+
+  <div class="card" id="title">
+    <div class="sig"><i></i><i></i><i></i></div>
+    <p class="mono">AI-assisted predictive passenger distribution · MTR</p>
+    <h1>Admiralty<br>Platform Flow</h1>
+    <p>Lights that send passengers to the doors with room on the next train, before they pick a queue.</p>
+  </div>
+  <div class="card" id="end">
+    <div class="sig"><i></i><i></i><i></i></div>
+    <h1>Use the space<br>we already have</h1>
+    <p>Try it yourself: geoeoeo217.github.io/MTR-platform-flow</p>
+    <p class="mono">Code: github.com/Geoeoeo217/MTR-platform-flow</p>
+  </div>
+
+  <div class="cap" id="cap"><span class="step" id="step"></span><span class="txt" id="txt"></span></div>
+  <div class="bar" id="bar"></div>
+
+  <div class="start" id="start">
+    <h1 style="font-family:var(--f-display);font-size:6vmin;margin:0;text-transform:uppercase">Demo reel · about 95 seconds</h1>
+    <p>Start your screen recording first (⇧⌘5 on a Mac, select this window), then press Play. The page goes full screen and plays the real prototypes with captions. Press Esc to stop.</p>
+    <div><button type="button" id="play">▶ Play demo</button></div>
+    <p id="status">Loading prototypes…</p>
+  </div>
+</div>
+
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const doc = id => $(id).contentDocument;
+const click = (id, sel) => { const el = doc(id)?.querySelector(sel); if (el) el.click(); };
+const TOTAL = 100;
+let t0 = 0;
+
+function show(which){ // which: an iframe id or a card id
+  for (const id of ['f3d','f2d','fhw','title','end']) $(id).classList.toggle('on', id === which);
+}
+function caption(step, text){
+  const c = $('cap');
+  if (!text) { c.classList.remove('on'); return; }
+  c.classList.remove('on');
+  setTimeout(() => { $('step').textContent = step; $('txt').textContent = text; c.classList.add('on'); }, 250);
+}
+function scrollTo(id, sel){ const d = doc(id), el = d?.querySelector(sel); if (el) d.defaultView.scrollTo(0, el.getBoundingClientRect().top + d.defaultView.scrollY - 8); }
+async function until(fn, maxMs){ const end = Date.now() + maxMs; while (Date.now() < end) { if (fn()) return true; await sleep(200); } return false; }
+
+// Get the 2D simulator running fast in the background so it has results by the time it is shown
+function prep(){
+  click('f2d', '#speed [data-s="40"]');
+  click('f3d', '#speed [data-s="4"]');
+  scrollTo('f3d', '.bar'); scrollTo('f2d', '#tiles');
+}
+
+async function run(){
+  t0 = performance.now();
+  const tick = () => { const k = Math.min(1, (performance.now() - t0) / (TOTAL * 1000)); $('bar').style.width = (k * 100) + '%'; if (k < 1) requestAnimationFrame(tick); };
+  requestAnimationFrame(tick);
+
+  show('title'); caption('', '');
+  await sleep(6000);
+
+  // 1. Tunnel view
+  click('f3d', '#mode [data-m="1"]'); click('f3d', '#cam [data-c="tunnel"]'); scrollTo('f3d', '.bar');
+  show('f3d');
+  caption('1 · The problem', 'At Admiralty, passengers can’t see the platform until they leave the tunnel. Our signs show which doors have room before they choose.');
+  await sleep(10000);
+
+  // 2. No guidance
+  click('f3d', '#cam [data-c="overview"]'); click('f3d', '#mode [data-m="0"]');
+  caption('2 · Without guidance', 'Without guidance, everyone queues next to the tunnel they came from. Doors 2A and 3A overflow while the far doors stay empty.');
+  await sleep(13000);
+
+  // 3. AI on
+  click('f3d', '#mode [data-m="1"]');
+  caption('3 · With AI lights', 'Same crowd, AI lights on. Green means room predicted on the next train, so people spread across all eight doors.');
+  await sleep(13000);
+
+  // 4. Train arrives: fast-forward to boarding, then slow down
+  caption('4 · People getting off', 'Fast-forwarding to the next train…');
+  click('f3d', '#speed [data-s="12"]');
+  await until(() => (doc('f3d')?.getElementById('hud')?.innerText || '').includes('Got off'), 15000);
+  click('f3d', '#speed [data-s="1"]');
+  caption('4 · People getting off', 'Purple passengers are getting off. The AI forecasts how many leave each door (the ↓ numbers) and learns from every train.');
+  await sleep(11000);
+  click('f3d', '#speed [data-s="4"]');
+
+  // 5. 2D side by side
+  click('f2d', '#speed [data-s="5"]'); scrollTo('f2d', '#tiles');
+  show('f2d');
+  caption('5 · Side by side', 'Same passengers, same trains. In our 120 test runs at Monday 09:00: queue imbalance −73%, people left behind 7,309 → 22 per hour, wait −45%.');
+  await sleep(14000);
+
+  // 6. Explainable decisions
+  scrollTo('f2d', '.panel:has(#tbl)');
+  caption('6 · Explainable', 'Every light is explainable: predicted load, people getting off, room and queue for each door.');
+  await sleep(9000);
+
+  // 7. Hardware
+  show('fhw');
+  caption('7 · Hardware', 'Only four new devices: CCTV camera with AI, edge unit, corridor sign and door lights. Train load data comes from MTR’s existing sensors.');
+  await sleep(10000);
+
+  // End
+  caption('', ''); show('end');
+  await sleep(6000);
+  $('bar').style.width = '100%';
+}
+
+let loaded = 0;
+for (const id of ['f3d','f2d','fhw']) $(id).addEventListener('load', () => { if (++loaded === 3) { prep(); $('status').textContent = 'Ready.'; } });
+
+$('play').addEventListener('click', async () => {
+  try { await $('stage').requestFullscreen(); } catch (e) {}
+  $('start').hidden = true;
+  prep();
+  run();
+});
+})();
+</script>
+</body>
+</html>

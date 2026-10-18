@@ -1,15 +1,39 @@
-# Demo video script (about 90 seconds)
+# Recording the demo video (about 100 seconds)
 
-**Recording:** on a Mac press **⇧⌘5**, choose "Record Selected Portion", select the browser window, then click Record. Press the stop button in the menu bar when you're done. The video is saved to the Desktop as a `.mov` file. Upload it to YouTube (Unlisted) or Google Drive and put the link and a QR code in the deck.
+The demo plays itself. `demo/index.html` drives the real prototypes (3D platform, 2D simulator, hardware model) with on-screen captions, so all you do is record the screen.
 
-**Before recording:** open both demos in separate tabs, set the browser to full screen, and close other tabs and notifications.
+Live: https://geoeoeo217.github.io/MTR-platform-flow/demo/ (available after you push)
 
-| Time | Screen | What to do | What to say |
-|---|---|---|---|
-| 0:00–0:10 | 3D platform, **Tunnel A** view | Click *Tunnel A* | "At Admiralty, passengers can't see the platform until they leave the tunnel. Our signs show them which doors have room before they choose." |
-| 0:10–0:25 | 3D, **Overview**, **No guidance** | Click *Overview*, then *No guidance*, speed 4× | "Without guidance, everyone queues next to the tunnel they came from. Doors 2A, 3A and 6A overflow while 1A, 7A and 8A stay empty." |
-| 0:25–0:40 | 3D, **AI lights on** | Click *AI lights on* | "With our AI lights, the same crowd spreads across all eight doors. Green means room predicted, red means full." |
-| 0:40–0:55 | 3D, wait for **Train boarding**, then speed 1× | Point at the purple people and the ↓ numbers | "Purple passengers are getting off. The AI forecasts how many leave each door from historical data and learns from every train. Each person who gets off frees a space." |
-| 0:55–1:15 | 2D simulator | Show the score tiles and the imbalance chart | "Same passengers, same trains, side by side. At Monday 9am, imbalance drops 73%, the longest queue drops 78%, and people left behind drop from over 7,000 an hour to 22." |
-| 1:15–1:25 | 2D, scroll to **What the AI sees** | Show the forecast table | "Every light is explainable: predicted load, predicted alighting, predicted room, and the queue at each door." |
-| 1:25–1:30 | Proof page | Show the compliance chart | "Even if only one in five passengers follows the lights, people left behind fall by over 90%. We use existing space better without building anything new." |
+## Steps (Mac)
+
+1. Open the demo link above in Chrome. Close other tabs and turn on Do Not Disturb, so no notifications appear in the recording.
+2. Wait until the start screen says **Ready.**
+3. Press **⇧⌘5**, choose **Record Entire Screen**, and click **Record**.
+4. Click **▶ Play demo**. The page goes full screen and plays for about 100 seconds.
+5. When the "Use the space we already have" end card appears, wait 3 seconds, then press the **stop** button in the menu bar (or **⌘⌃Esc**).
+6. The video is saved to your Desktop as a `.mov` file.
+7. Upload it to YouTube as **Unlisted** (or to Google Drive with "Anyone with the link"), then put the link and a QR code on the prototype slide.
+
+To add your voice, click **Options** in the ⇧⌘5 toolbar and pick your microphone before recording. Read the voiceover below as each caption appears.
+
+## What plays, and an optional voiceover
+
+| Time | Scene | Voiceover (optional) |
+|---|---|---|
+| 0:00 | Title card | "This is Admiralty Platform Flow, our AI system for spreading passengers along MTR platforms." |
+| 0:06 | 3D, inside Tunnel A | "At Admiralty, you can’t see the platform until you leave the tunnel. Our signs show which doors have room before you choose." |
+| 0:16 | 3D, no guidance | "Without guidance, everyone queues next to their tunnel. Doors 2A and 3A overflow while the far doors stay empty." |
+| 0:29 | 3D, AI lights on | "With our AI lights on, the same crowd spreads across all eight doors." |
+| 0:42 | 3D, train arrives | "Purple passengers are getting off. The AI forecasts how many leave each door and learns from every train." |
+| 1:00 | 2D side by side | "Same passengers, same trains. In 120 test runs, queue imbalance fell 73% and people left behind fell from over 7,000 an hour to 22." |
+| 1:14 | 2D forecast table | "Every light is explainable: predicted load, people getting off, room and queue for each door." |
+| 1:23 | Hardware | "We only add four devices: a camera with AI, an edge unit, the corridor sign and door lights." |
+| 1:33 | End card | "Use the space we already have. Try it at the link on screen." |
+
+The train scene fast-forwards until the next train arrives, so timings after 0:42 can shift by a few seconds.
+
+To try it before pushing, run this in the Hackathon folder and open http://localhost:8000/demo/:
+
+```bash
+python3 -m http.server 8000
+```

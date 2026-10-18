@@ -12,6 +12,7 @@ Start here: **https://geoeoeo217.github.io/MTR-platform-flow/**
 |---|---|---|
 | 2D simulator: side-by-side comparison with live scores | https://geoeoeo217.github.io/MTR-platform-flow/platform-flow/ | `platform-flow/index.html` |
 | 3D platform: tunnels, door lights, passengers arriving and getting off | https://geoeoeo217.github.io/MTR-platform-flow/platform-flow/3d.html | `platform-flow/3d.html` |
+| Demo reel: self-playing video demo with captions | https://geoeoeo217.github.io/MTR-platform-flow/demo/ | `demo/index.html` |
 | Prototype proof: results, charts, screenshots | https://geoeoeo217.github.io/MTR-platform-flow/proof/ | `proof/index.html` |
 | Hardware concept in 3D (4 devices) | https://geoeoeo217.github.io/MTR-platform-flow/hardware-3d.html | `hardware-3d.html` |
 
@@ -74,11 +75,13 @@ Only 4 new devices are needed. Everything else comes from systems MTR already ru
 ```
 platform-flow/index.html   2D simulator (model + UI)
 platform-flow/3d.html      3D platform view (same model)
-hardware-3d.html        3D hardware / sensor concept
+hardware-3d.html           3D hardware concept (4 devices)
 proof/index.html           prototype proof page
 proof/run_benchmark.py     benchmark script
 proof/results.csv          120 benchmark runs
 proof/summary.csv          averages per scenario and compliance level
 proof/screens/             screenshots for the deck
-DEMO_VIDEO_SCRIPT.md       60–90 s demo recording plan
+demo/index.html            self-playing demo reel for recording the video
+pitch/                     pitch deck source and QR codes
+DEMO_VIDEO_SCRIPT.md       how to record the demo video, with voiceover
 ```

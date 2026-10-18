@@ -1,0 +1,38 @@
+<section id="how" data-transition="fade" style="background:#EEF2F1;color:#13201D;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;letter-spacing:3px;text-transform:uppercase;color:#1F4FA8">How it works</p>
+<h2 style="font-family:'Barlow Condensed', 'Arial Narrow', sans-serif;font-size:72px;font-weight:600;line-height:1.05;text-transform:uppercase;color:#13201D">From data to lights in five steps</h2>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:24px">
+<div style="display:flex;flex-direction:column;gap:12px;background:#FBFCFB;border:1px solid #D3DCD9;border-top:6px solid #1F4FA8;border-radius:12px;padding:28px">
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#1F4FA8">1</p>
+<h3 style="font-size:32px;font-weight:600;color:#13201D">Collect</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5A55">Queues per door, load per car, historical alighting</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px;background:#FBFCFB;border:1px solid #D3DCD9;border-top:6px solid #1F4FA8;border-radius:12px;padding:28px">
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#1F4FA8">2</p>
+<h3 style="font-size:32px;font-weight:600;color:#13201D">Predict</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5A55">How many get off each car, so the room at each door</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px;background:#FBFCFB;border:1px solid #D3DCD9;border-top:6px solid #1F4FA8;border-radius:12px;padding:28px">
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#1F4FA8">3</p>
+<h3 style="font-size:32px;font-weight:600;color:#13201D">Recommend</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5A55">Compare people heading to a door with its room</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px;background:#FBFCFB;border:1px solid #D3DCD9;border-top:6px solid #1F4FA8;border-radius:12px;padding:28px">
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#1F4FA8">4</p>
+<h3 style="font-size:32px;font-weight:600;color:#13201D">Light up</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5A55">Tunnel signs and door lights, every 2 seconds</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px;background:#FBFCFB;border:1px solid #D3DCD9;border-top:6px solid #1F4FA8;border-radius:12px;padding:28px">
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;color:#1F4FA8">5</p>
+<h3 style="font-size:32px;font-weight:600;color:#13201D">Evaluate</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5A55">Score evenness and feed real alighting back</p>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:16px;background:#111917;border-radius:12px;padding:32px 40px">
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:32px;color:#E4ECEA">room = capacity − load on arrival + forecast getting off</p>
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:32px;color:#E4ECEA">ratio = people queuing or walking there ÷ room → <span style="color:#2FD27A">green &lt; 0.7</span> · <span style="color:#F2BD2C">amber &lt; 1.0</span> · <span style="color:#FF5A4E">red</span></p>
+</div>
+<aside>1:15–1:55 (40 s). The system runs a five-step loop. It collects three kinds of data: how many people are queuing at each door from CCTV, how full each car of the approaching train is from the train’s own load sensors, and historical data on how many people get off at each door by station, day and hour. It predicts the room each door will have, compares that with the people already queuing or walking there, and sets the lights. Every train, it checks how many really got off and feeds that back in.</aside>
+</section>
