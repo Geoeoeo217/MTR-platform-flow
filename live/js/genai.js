@@ -78,7 +78,12 @@ export class GenAI {
       const names = ((await res.json()).models || []).map(m => m.name);
       if (!names.includes(this.ollamaModel)) return `Ollama is running but doesn’t have ${this.ollamaModel}. Run: ollama pull ${this.ollamaModel}`;
       this.ollamaOk = true; return `Ollama ready (${this.ollamaModel}).`;
-    } catch { return `Ollama not reachable at ${this.ollamaUrl}. Start the Ollama app on this computer, or choose Claude in Settings.`; }
+    } catch {
+      const online = !/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+      return `Ollama not reachable at ${this.ollamaUrl}. ` + (online
+        ? 'If Ollama is running on this computer, this website still needs permission to use it: open the page from localhost instead, or allow this site (README › Using Ollama). Or choose Claude in Settings.'
+        : 'Start the Ollama app on this computer, or choose Claude in Settings.');
+    }
   }
   get name() { return this.provider === 'ollama' ? `Ollama · ${this.ollamaModel}` : this.provider === 'claude' ? 'Claude' : 'GenAI (off)'; }
 
