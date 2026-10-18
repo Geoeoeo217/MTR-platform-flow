@@ -26,7 +26,7 @@ h2{font-family:var(--f-display);font-weight:600;text-transform:uppercase;font-si
 .status{font-size:.88rem;color:var(--muted)}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px;display:grid;gap:12px;min-width:0;align-content:start}
 .head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
-.top{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:16px}
+.top{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:16px;align-items:start}
 .bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 button,select,input,label.file{font:inherit;font-size:.88rem;color:var(--ink);background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:6px 10px}
 button,label.file{cursor:pointer}
@@ -37,7 +37,7 @@ label.file input{position:absolute;opacity:0;width:1px;height:1px}
 .cam{position:relative;aspect-ratio:16/9;background:#070b0a;border-radius:6px;overflow:hidden}
 .cam video,.cam img,.cam > canvas#media{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
 .cam canvas{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair;touch-action:none}
-.cam .empty{position:absolute;inset:0;display:grid;place-content:center;color:var(--muted);font-size:.95rem;text-align:center;padding:16px}
+.cam .empty{position:absolute;inset:0;display:grid;place-content:center;color:var(--muted);font-size:.95rem;text-align:center;padding:16px;background:#070b0a}
 .small{font-size:.8rem;color:var(--muted)}
 .muted{color:var(--muted)}
 .sign{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px;background:#070b0a;padding:10px;border-radius:6px}
@@ -75,106 +75,175 @@ code{font-family:var(--f-mono);font-size:.85em;background:var(--panel2);padding:
 .check input{width:auto}
 .note{font-size:.8rem;color:var(--muted);margin:0}
 @media (max-width:900px){.top,.grid2{grid-template-columns:1fr}}
+
+/* Submission 1: the five-step workflow strip, demo bar, data-source badges, flags and the before/after bars */
+.demo{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;background:var(--panel);border:1px solid var(--accent);border-radius:8px;padding:14px 16px}
+.demo .primary{font-size:1rem;padding:9px 18px}
+.demo .group{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.flow{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.step{background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--accent);border-radius:8px;padding:12px;display:grid;gap:4px;align-content:start;min-width:0}
+.step .n{font-family:var(--f-mono);font-size:.7rem;color:var(--accent);letter-spacing:.1em;text-transform:uppercase}
+.step b{font-family:var(--f-display);font-size:1.35rem;font-weight:600;line-height:1.1;overflow-wrap:anywhere}
+.step p{margin:0;font-size:.8rem;color:var(--muted)}
+.step.warn{border-top-color:var(--caution)}
+.badge{display:inline-block;font-family:var(--f-mono);font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:99px;border:1px solid currentColor;white-space:nowrap}
+.badge.real{color:var(--go)}.badge.sim{color:var(--caution)}.badge.manual{color:var(--accent)}.badge.off{color:var(--muted)}
+.rec{display:grid;gap:6px;background:var(--panel2);border-radius:6px;padding:12px;border-left:4px solid var(--go)}
+.rec.none{border-left-color:var(--stop)}
+.rec b.big{font-family:var(--f-display);font-size:2rem;line-height:1}
+.flag{background:rgba(242,189,44,.12);border:1px solid var(--caution);color:var(--ink);border-radius:6px;padding:8px 10px;font-size:.85rem}
+.flag ul{margin:4px 0 0;padding-left:18px}
+.bars{display:grid;gap:8px}
+.barrow{display:grid;grid-template-columns:44px 1fr 1fr;gap:8px;align-items:center;font-family:var(--f-mono);font-size:.78rem}
+.barrow .track{background:var(--panel2);border-radius:3px;height:16px;position:relative;overflow:hidden}
+.barrow .fill{position:absolute;inset:0 auto 0 0;border-radius:3px}
+.barrow .fill span{position:absolute;right:4px;top:0;font-size:.7rem;color:#0b1110;font-weight:600;line-height:16px}
+details.more{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 16px}
+details.more summary{cursor:pointer;font-family:var(--f-display);text-transform:uppercase;font-size:1.1rem;letter-spacing:.02em}
+details.more[open] summary{margin-bottom:10px}
+.inputs{display:grid;grid-template-columns:auto repeat(var(--doors,4),minmax(0,1fr));gap:6px;align-items:center;font-size:.82rem}
+.inputs input{width:100%;min-width:0}
+.formula{font-family:var(--f-mono);font-size:.8rem;background:#070b0a;border-radius:6px;padding:8px 10px;color:var(--ink)}
+@media (max-width:1000px){.flow{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.flow{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
     <div style="display:grid;gap:6px">
-      <span class="eyebrow"><span class="sig"><i></i><i></i><i></i></span>Live AI system · camera AI + Claude + learning forecast</span>
+      <span class="eyebrow"><span class="sig"><i></i><i></i><i></i></span>Live system · camera AI → capacity → door recommendation → guidance</span>
       <h1>Platform Flow Live</h1>
       <p class="status" id="status">Starting…</p>
     </div>
-    <div class="bar"><a href="../" style="color:var(--accent);font-size:.88rem">← All demos</a><button type="button" id="openSettings">Settings &amp; API key</button></div>
+    <div class="bar"><a href="../" style="color:var(--accent);font-size:.88rem">← All demos</a><button type="button" id="openSettings">Settings</button></div>
   </header>
+
+  <section class="demo" aria-label="Run the demo">
+    <button type="button" class="primary" id="runDemo">▶ Run demo</button>
+    <div class="group"><span class="lbl">Scenario</span>
+      <select id="scenario" aria-label="Demo scenario">
+        <option value="A">A · Morning rush: crowd by the stairs (1A–2A)</option>
+        <option value="B">B · Evening: middle cars full, crowd at 3A–4A</option>
+      </select>
+    </div>
+    <div class="group"><span class="lbl">Or use input</span>
+      <button type="button" id="srcCamera">Webcam</button>
+      <label class="file">Upload video / photo<input type="file" id="srcFile" accept="video/*,image/*"></label>
+      <button type="button" id="srcSample">Virtual CCTV (simulated)</button>
+      <button type="button" id="srcManual">Manual entry</button>
+    </div>
+  </section>
+
+  <section class="flow" aria-label="Workflow">
+    <div class="step" id="st1"><span class="n">1 · Input</span><b id="f1">–</b><p id="f1s"></p></div>
+    <div class="step" id="st2"><span class="n">2 · Counts</span><b id="f2">–</b><p id="f2s"></p></div>
+    <div class="step" id="st3"><span class="n">3 · Capacity</span><b id="f3">–</b><p id="f3s"></p></div>
+    <div class="step" id="st4"><span class="n">4 · Recommendation</span><b id="f4">–</b><p id="f4s"></p></div>
+    <div class="step" id="st5"><span class="n">5 · Guidance</span><b id="f5">–</b><p id="f5s"></p></div>
+  </section>
 
   <div class="top">
     <section class="card" aria-labelledby="h-cam">
-      <div class="head"><h2 id="h-cam">1 · Camera AI</h2><span class="small" id="perf"></span></div>
-      <div class="bar">
-        <button type="button" class="primary" id="srcCamera">Start webcam</button>
-        <label class="file">Upload video or photo<input type="file" id="srcFile" accept="video/*,image/*"></label>
-        <button type="button" id="srcSample">Virtual CCTV (3D)</button>
-        <button type="button" id="srcManual">Manual counts</button>
+      <div class="head"><h2 id="h-cam">1 · Input &amp; 2 · Counts</h2><span id="srcBadge" class="badge off">No input</span></div>
+      <div class="cam" id="camBox"><video id="media" playsinline muted></video><canvas id="overlay" aria-label="Detections and counting areas"></canvas><div class="empty" id="camEmpty">Press ▶ Run demo, or choose an input above.</div></div>
+      <p class="small" id="perf"></p>
+      <div id="manualPanel" hidden style="display:grid;gap:8px">
+        <p class="small" id="manualHint">Enter counts per door (whole numbers, 0–999):</p>
+        <div class="inputs" id="manualInputs"></div>
       </div>
-      <div class="cam"><video id="media" playsinline muted></video><canvas id="overlay" aria-label="Detections and counting areas"></canvas><div class="empty" id="camEmpty">No camera yet</div></div>
-      <div class="bar">
-        <span class="lbl">Draw</span>
-        <select id="tool" aria-label="Area type"><option value="queue">Queue zone</option><option value="car">Car (inside train)</option><option value="exit">Exit line</option></select>
-        <span class="lbl">Door</span><select id="toolDoor" aria-label="Door"></select>
-        <button type="button" id="resetZones">Default zones</button><button type="button" id="clearZones">Clear</button>
-      </div>
-      <p class="small" id="zoneList"></p>
-      <div id="manualPanel" hidden><p class="small">People queuing at each door:</p><div class="manual" id="manualInputs"></div></div>
-      <p class="note">Drag on the image to draw an area. Queue zones count people by where their feet are; car zones count people inside a train car; an exit line counts people crossing it downward (off the train) while doors are open.</p>
+      <details class="more" id="zoneDetails">
+        <summary>Counting areas</summary>
+        <div class="bar">
+          <select id="tool" aria-label="Area type"><option value="queue">Queue zone</option><option value="car">Car (inside train)</option><option value="exit">Exit line</option></select>
+          <span class="lbl">Door</span><select id="toolDoor" aria-label="Door"></select>
+          <button type="button" id="resetZones">Default areas</button><button type="button" id="clearZones">Clear</button>
+        </div>
+        <p class="small" id="zoneList"></p>
+        <p class="note">Drag on the image to draw. Queue zones count people by their feet; car zones count people inside a car; an exit line counts people crossing it downward (off the train) while doors are open.</p>
+      </details>
     </section>
 
-    <section class="card" aria-labelledby="h-out">
-      <div class="head"><h2 id="h-out">4 · Lights</h2><span class="lbl">What passengers see</span></div>
-      <span class="lbl">Tunnel sign</span>
+    <section class="card" aria-labelledby="h-rec">
+      <div class="head"><h2 id="h-rec">4 · Recommendation &amp; 5 · Guidance</h2></div>
+      <div class="rec" id="rec"></div>
+      <div id="flags" class="flag" hidden></div>
+      <span class="lbl">Tunnel sign and door lights</span>
       <div class="sign" id="sign"></div>
-      <div class="signtext" id="signText">Follow the green lights for doors with room</div>
-      <span class="lbl">Door lights</span>
+      <div class="signtext"><span id="signText"></span> <span class="badge off" id="signSource">rule-based</span></div>
       <div class="doors" id="doorLights"></div>
       <div class="phase" id="phase" data-phase="waiting"></div>
       <p class="small" id="exitCounts"></p>
       <div class="bar">
         <button type="button" id="btnArrive">Train arriving</button><button type="button" id="btnOpen">Doors open</button><button type="button" id="btnClose">Doors close</button>
+        <label class="small check"><input type="checkbox" id="auto"> Run trains automatically</label>
       </div>
-      <label class="small check"><input type="checkbox" id="auto"> Run trains automatically</label>
-      <label class="small check"><input type="checkbox" id="simAlight" checked> Doors without an exit line: use test outcomes so the forecast can learn</label>
     </section>
   </div>
 
-  <section class="card" aria-labelledby="h-dec">
-    <div class="head"><h2 id="h-dec">2 + 3 · Forecast and decision, per door</h2><span class="lbl">Room = capacity − on board + forecast getting off · ratio = queue ÷ room</span></div>
+  <section class="card" aria-labelledby="h-cap">
+    <div class="head"><h2 id="h-cap">3 · Capacity per door, and why</h2><span class="lbl" id="capNote"></span></div>
+    <div class="formula">room = car capacity − on board + forecast getting off · ratio = queue ÷ room → green below 0.7 · amber below 1.0 · red at 1.0 or more, or when the queue area is full</div>
     <div class="scroll"><table id="doorTable"></table></div>
   </section>
 
   <div class="grid2">
-    <section class="card" aria-labelledby="h-ai">
-      <div class="head"><h2 id="h-ai">GenAI</h2><span class="tag" id="aiName">off</span></div>
-      <div id="aiOff">
-        <p>A generative AI model counts the crowd from camera frames and writes sign text, announcements in English, 繁體中文 and 简体中文, and a staff note. Choose Ollama (free, on this computer) or Claude (API key) in Settings.</p>
-      </div>
-      <div id="aiOn" hidden style="display:grid;gap:12px">
-        <div class="head"><span class="lbl">Crowd count from the camera frame</span><button type="button" id="analyzeNow">Count now</button></div>
-        <div id="aiCount"></div><p class="small" id="aiStatus"></p>
-        <div class="head"><span class="lbl">Guidance for passengers and staff</span><button type="button" id="guideNow">Write now</button></div>
-        <div id="aiGuide" style="display:grid;gap:8px"></div><p class="small" id="guideStatus"></p>
-      </div>
+    <section class="card" aria-labelledby="h-ba">
+      <div class="head"><h2 id="h-ba">Before / after guidance (estimate)</h2></div>
+      <div class="bars" id="bars"></div>
+      <p class="small" id="baStats"></p>
+      <p class="note" id="baNote"></p>
     </section>
 
-    <section class="card" aria-labelledby="h-learn">
-      <div class="head"><h2 id="h-learn">Forecast learning</h2><button type="button" id="clearLearned">Clear learned data</button></div>
-      <p class="small" id="learnStats"></p>
-      <div class="scroll"><table id="learnTable"></table></div>
-      <p class="small" id="learnBasis"></p>
-      <p class="note">History starts from 4 weeks of sample data (standing in for MTR records). Each train the exit camera counts is added on this device, so the 2-week averages keep renewing.</p>
+    <section class="card" aria-labelledby="h-ai">
+      <div class="head"><h2 id="h-ai">Announcement · GenAI</h2><span class="badge off" id="aiName">off</span></div>
+      <p class="small" id="aiAvail"></p>
+      <div id="aiGuide" style="display:grid;gap:8px"></div>
+      <div class="bar"><button type="button" id="guideNow">Write announcement</button><span class="small" id="guideStatus"></span></div>
+      <details class="more">
+        <summary>GenAI crowd count (optional)</summary>
+        <div class="bar"><button type="button" id="analyzeNow">Count current frame</button><span class="small" id="aiStatus"></span></div>
+        <div id="aiCount"></div>
+        <p class="note">With Claude, this count backs up the detector in dense crowds. A small local Ollama model’s count is shown for comparison only.</p>
+      </details>
     </section>
   </div>
+
+  <details class="more">
+    <summary>Forecast details: how “getting off” is estimated</summary>
+    <p class="small" id="learnStats"></p>
+    <p class="small" id="learnBasis"></p>
+    <div class="scroll"><table id="learnTable"></table></div>
+    <div class="bar"><button type="button" id="clearLearned">Clear counts recorded on this device</button></div>
+    <p class="note">Baseline: the share of riders who got off at each door for the same weekday and 15-minute slot, averaged over the latest 2 weeks of history. The history is 4 weeks of sample data standing in for MTR records. When an exit line counts real people getting off, that train is added and today’s correction updates. Counts from the virtual CCTV are kept for this session only. Nothing else is learned or trained.</p>
+  </details>
 </div>
 
 <dialog id="settings" aria-labelledby="h-set">
   <form id="settingsForm">
     <h2 id="h-set">Settings</h2>
-    <label>Generative AI <select id="setProvider"><option value="ollama">Ollama: free, runs on this computer</option><option value="claude">Claude: needs an API key</option></select></label>
+    <label>GenAI for announcements <select id="setProvider"><option value="off">Off</option><option value="ollama">Ollama: free, runs on this computer</option><option value="claude">Claude: needs an API key</option></select></label>
     <div id="ollamaFields" style="display:grid;gap:12px">
       <label>Ollama address <input type="text" id="setOllamaUrl" placeholder="http://localhost:11434"></label>
-      <label>Ollama model (must read images) <input type="text" id="setOllamaModel" placeholder="qwen3-vl:2b-instruct"></label>
-      <p class="note">Install Ollama from ollama.com, then run <code>ollama pull qwen3-vl:2b-instruct</code> once. Keep the Ollama app open.</p>
+      <label>Ollama model <input type="text" id="setOllamaModel" placeholder="qwen3-vl:2b-instruct"></label>
+      <p class="note">Install Ollama from ollama.com, run <code>ollama pull qwen3-vl:2b-instruct</code> once, keep the app open, and open this page from <code>localhost</code>.</p>
     </div>
     <div id="claudeFields" style="display:grid;gap:12px">
-    <label>Anthropic API key <input type="password" id="setKey" autocomplete="off" placeholder="sk-ant-…"></label>
-    <label class="check"><input type="checkbox" id="setRemember"> Remember the key on this device</label>
-    <p class="note">The key goes straight from this browser to the Claude API. Use your own key on your own device only.</p>
-    <label>Claude model <select id="setModel"><option value="claude-opus-5-5">Claude Opus 5.5 (default)</option><option value="claude-sonnet-5-5">Claude Sonnet 5.5 (faster)</option><option value="claude-haiku-5-5">Claude Haiku 5.5 (fastest)</option></select></label>
+      <label>Anthropic API key <input type="password" id="setKey" autocomplete="off" placeholder="sk-ant-…"></label>
+      <label class="check"><input type="checkbox" id="setRemember"> Remember the key on this device</label>
+      <p class="note">The key goes straight from this browser to the Claude API and is never stored in the project. Use your own key on your own device.</p>
+      <button type="button" id="forgetKey">Forget key</button>
     </div>
-    <label>Scale <select id="setPreset"><option value="desk">Desk demo: 6 per car, for a webcam test</option><option value="station">Real station: 230 per car</option></select></label>
-    <label>Doors <input type="number" id="setDoors" min="2" max="8"></label>
-    <label>GenAI counts a frame every (seconds) <input type="number" id="setEvery" min="5" max="300"></label>
-    <label>Hold a light at least (seconds) before it relaxes <input type="number" id="setHold" min="0" max="60"></label>
-    <div class="bar" style="justify-content:space-between"><button type="button" id="forgetKey">Forget key</button><span class="bar"><button type="button" id="cancelSettings">Cancel</button><button type="submit" class="primary">Save</button></span></div>
+    <details class="more">
+      <summary>Advanced</summary>
+      <div style="display:grid;gap:12px">
+        <label>Scale <select id="setPreset"><option value="desk">Desk demo: 6 per car</option><option value="station">Real station: 230 per car</option></select></label>
+        <label>Doors <input type="number" id="setDoors" min="2" max="8"></label>
+        <label>Before/after assumption: share of passengers who follow the lights (%) <input type="number" id="setFollow" min="0" max="100"></label>
+        <label>Hold a light at least (seconds) before it relaxes <input type="number" id="setHold" min="0" max="60"></label>
+      </div>
+    </details>
+    <div class="bar" style="justify-content:flex-end"><button type="button" id="cancelSettings">Cancel</button><button type="submit" class="primary">Save</button></div>
   </form>
 </dialog>
 

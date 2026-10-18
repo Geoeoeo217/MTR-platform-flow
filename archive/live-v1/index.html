@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Platform Flow Live (v1 backup)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a station operator console. Camera + lights on top, the AI's numbers per door below, then GenAI and learning. One dark control-room look. */
+:root{
+  --bg:#0f1514; --panel:#172120; --panel2:#1d2a28; --ink:#e4ecea; --muted:#93a39f; --line:#2a3735;
+  --accent:#7ea2ee; --go:#2fd27a; --caution:#f2bd2c; --stop:#ff5a4e; --violet:#c58cff;
+  --f-display:"Barlow Condensed","Arial Narrow",sans-serif; --f-body:"IBM Plex Sans",system-ui,sans-serif; --f-mono:"IBM Plex Mono",ui-monospace,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5}
+.wrap{max-width:1360px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-left,0px)) 48px max(16px,env(safe-area-inset-right,0px));display:grid;gap:16px}
+header{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:12px}
+h1{font-family:var(--f-display);font-weight:700;text-transform:uppercase;font-size:clamp(1.8rem,4vw,2.6rem);line-height:1;margin:0}
+h2{font-family:var(--f-display);font-weight:600;text-transform:uppercase;font-size:1.25rem;margin:0;letter-spacing:.02em}
+.eyebrow,.lbl{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.sig{display:inline-flex;gap:5px;margin-right:8px;vertical-align:middle}.sig i{width:10px;height:10px;border-radius:50%}
+.sig i:nth-child(1){background:var(--go)}.sig i:nth-child(2){background:var(--caution)}.sig i:nth-child(3){background:var(--stop)}
+.status{font-size:.88rem;color:var(--muted)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px;display:grid;gap:12px;min-width:0;align-content:start}
+.head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.top{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:16px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button,select,input,label.file{font:inherit;font-size:.88rem;color:var(--ink);background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:6px 10px}
+button,label.file{cursor:pointer}
+button:hover,label.file:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:#0b1110;border-color:var(--accent);font-weight:600}
+button:focus-visible,select:focus-visible,input:focus-visible,label.file:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+label.file input{position:absolute;opacity:0;width:1px;height:1px}
+.cam{position:relative;aspect-ratio:16/9;background:#070b0a;border-radius:6px;overflow:hidden}
+.cam video,.cam img,.cam > canvas#media{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.cam canvas{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair;touch-action:none}
+.cam .empty{position:absolute;inset:0;display:grid;place-content:center;color:var(--muted);font-size:.95rem;text-align:center;padding:16px}
+.small{font-size:.8rem;color:var(--muted)}
+.muted{color:var(--muted)}
+.sign{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px;background:#070b0a;padding:10px;border-radius:6px}
+.tile{border-radius:5px;padding:8px 6px;color:#0b1110;display:grid;gap:2px;text-align:center}
+.tile b{font-family:var(--f-display);font-size:1.8rem;line-height:1}
+.tile .arrow{font-size:1.2rem;font-weight:700}
+.tile small{font-weight:700;font-size:.72rem;text-transform:uppercase}
+.signtext{font-family:var(--f-mono);font-size:.85rem;color:var(--ink);background:#070b0a;border-radius:6px;padding:8px 10px}
+.doors{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px}
+.door{display:grid;justify-items:center;gap:4px;font-family:var(--f-mono);font-size:.8rem}
+.door i{width:100%;height:14px;border-radius:3px}
+.phase{font-weight:600;padding:8px 10px;border-radius:6px;background:var(--panel2);border-left:4px solid var(--accent)}
+.phase[data-phase="open"]{border-left-color:var(--violet)}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:.9rem}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+tbody th{font-family:var(--f-mono);font-size:.75rem;font-weight:400;color:var(--muted)}
+td small{display:block;font-size:.7rem;color:var(--muted)}
+.pill{display:inline-block;padding:2px 8px;border-radius:99px;color:#0b1110;font-weight:600;font-size:.78rem}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+.lang{display:grid;gap:2px;border-top:1px solid var(--line);padding-top:8px}
+.lang span{font-family:var(--f-mono);font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--violet)}
+.lang p,.card p{margin:0}
+.manual{display:flex;flex-wrap:wrap;gap:10px}
+.manual input{width:72px}
+.tag{font-family:var(--f-mono);font-size:.7rem;border:1px solid var(--violet);color:var(--violet);border-radius:99px;padding:2px 8px}
+dialog{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:20px;max-width:min(560px,calc(100vw - 32px))}
+dialog::backdrop{background:rgba(0,0,0,.6)}
+dialog form{display:grid;gap:12px}
+dialog label{display:grid;gap:4px;font-size:.88rem}
+dialog input,dialog select{width:100%}
+code{font-family:var(--f-mono);font-size:.85em;background:var(--panel2);padding:1px 5px;border-radius:3px}
+.check{display:flex!important;gap:8px;align-items:center}
+.check input{width:auto}
+.note{font-size:.8rem;color:var(--muted);margin:0}
+@media (max-width:900px){.top,.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div style="display:grid;gap:6px">
+      <span class="eyebrow"><span class="sig"><i></i><i></i><i></i></span>Live AI system · camera AI + Claude + learning forecast</span>
+      <h1>Platform Flow Live</h1>
+      <p class="status" id="status">Starting…</p>
+    </div>
+    <div class="bar"><a href="../../" style="color:var(--accent);font-size:.88rem">← All demos</a><button type="button" id="openSettings">Settings &amp; API key</button></div>
+  </header>
+
+  <div class="top">
+    <section class="card" aria-labelledby="h-cam">
+      <div class="head"><h2 id="h-cam">1 · Camera AI</h2><span class="small" id="perf"></span></div>
+      <div class="bar">
+        <button type="button" class="primary" id="srcCamera">Start webcam</button>
+        <label class="file">Upload video or photo<input type="file" id="srcFile" accept="video/*,image/*"></label>
+        <button type="button" id="srcSample">Virtual CCTV (3D)</button>
+        <button type="button" id="srcManual">Manual counts</button>
+      </div>
+      <div class="cam"><video id="media" playsinline muted></video><canvas id="overlay" aria-label="Detections and counting areas"></canvas><div class="empty" id="camEmpty">No camera yet</div></div>
+      <div class="bar">
+        <span class="lbl">Draw</span>
+        <select id="tool" aria-label="Area type"><option value="queue">Queue zone</option><option value="car">Car (inside train)</option><option value="exit">Exit line</option></select>
+        <span class="lbl">Door</span><select id="toolDoor" aria-label="Door"></select>
+        <button type="button" id="resetZones">Default zones</button><button type="button" id="clearZones">Clear</button>
+      </div>
+      <p class="small" id="zoneList"></p>
+      <div id="manualPanel" hidden><p class="small">People queuing at each door:</p><div class="manual" id="manualInputs"></div></div>
+      <p class="note">Drag on the image to draw an area. Queue zones count people by where their feet are; car zones count people inside a train car; an exit line counts people crossing it downward (off the train) while doors are open.</p>
+    </section>
+
+    <section class="card" aria-labelledby="h-out">
+      <div class="head"><h2 id="h-out">4 · Lights</h2><span class="lbl">What passengers see</span></div>
+      <span class="lbl">Tunnel sign</span>
+      <div class="sign" id="sign"></div>
+      <div class="signtext" id="signText">Follow the green lights for doors with room</div>
+      <span class="lbl">Door lights</span>
+      <div class="doors" id="doorLights"></div>
+      <div class="phase" id="phase" data-phase="waiting"></div>
+      <p class="small" id="exitCounts"></p>
+      <div class="bar">
+        <button type="button" id="btnArrive">Train arriving</button><button type="button" id="btnOpen">Doors open</button><button type="button" id="btnClose">Doors close</button>
+      </div>
+      <label class="small check"><input type="checkbox" id="auto"> Run trains automatically</label>
+      <label class="small check"><input type="checkbox" id="simAlight" checked> Doors without an exit line: use test outcomes so the forecast can learn</label>
+    </section>
+  </div>
+
+  <section class="card" aria-labelledby="h-dec">
+    <div class="head"><h2 id="h-dec">2 + 3 · Forecast and decision, per door</h2><span class="lbl">Room = capacity − on board + forecast getting off · ratio = queue ÷ room</span></div>
+    <div class="scroll"><table id="doorTable"></table></div>
+  </section>
+
+  <div class="grid2">
+    <section class="card" aria-labelledby="h-ai">
+      <div class="head"><h2 id="h-ai">GenAI</h2><span class="tag" id="aiName">off</span></div>
+      <div id="aiOff">
+        <p>A generative AI model counts the crowd from camera frames and writes sign text, announcements in English, 繁體中文 and 简体中文, and a staff note. Choose Ollama (free, on this computer) or Claude (API key) in Settings.</p>
+      </div>
+      <div id="aiOn" hidden style="display:grid;gap:12px">
+        <div class="head"><span class="lbl">Crowd count from the camera frame</span><button type="button" id="analyzeNow">Count now</button></div>
+        <div id="aiCount"></div><p class="small" id="aiStatus"></p>
+        <div class="head"><span class="lbl">Guidance for passengers and staff</span><button type="button" id="guideNow">Write now</button></div>
+        <div id="aiGuide" style="display:grid;gap:8px"></div><p class="small" id="guideStatus"></p>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="h-learn">
+      <div class="head"><h2 id="h-learn">Forecast learning</h2><button type="button" id="clearLearned">Clear learned data</button></div>
+      <p class="small" id="learnStats"></p>
+      <div class="scroll"><table id="learnTable"></table></div>
+      <p class="small" id="learnBasis"></p>
+      <p class="note">History starts from 4 weeks of sample data (standing in for MTR records). Each train the exit camera counts is added on this device, so the 2-week averages keep renewing.</p>
+    </section>
+  </div>
+</div>
+
+<dialog id="settings" aria-labelledby="h-set">
+  <form id="settingsForm">
+    <h2 id="h-set">Settings</h2>
+    <label>Generative AI <select id="setProvider"><option value="ollama">Ollama: free, runs on this computer</option><option value="claude">Claude: needs an API key</option></select></label>
+    <div id="ollamaFields" style="display:grid;gap:12px">
+      <label>Ollama address <input type="text" id="setOllamaUrl" placeholder="http://localhost:11434"></label>
+      <label>Ollama model (must read images) <input type="text" id="setOllamaModel" placeholder="qwen3-vl:2b-instruct"></label>
+      <p class="note">Install Ollama from ollama.com, then run <code>ollama pull qwen3-vl:2b-instruct</code> once. Keep the Ollama app open.</p>
+    </div>
+    <div id="claudeFields" style="display:grid;gap:12px">
+    <label>Anthropic API key <input type="password" id="setKey" autocomplete="off" placeholder="sk-ant-…"></label>
+    <label class="check"><input type="checkbox" id="setRemember"> Remember the key on this device</label>
+    <p class="note">The key goes straight from this browser to the Claude API. Use your own key on your own device only.</p>
+    <label>Claude model <select id="setModel"><option value="claude-opus-5-5">Claude Opus 5.5 (default)</option><option value="claude-sonnet-5-5">Claude Sonnet 5.5 (faster)</option><option value="claude-haiku-5-5">Claude Haiku 5.5 (fastest)</option></select></label>
+    </div>
+    <label>Scale <select id="setPreset"><option value="desk">Desk demo: 6 per car, for a webcam test</option><option value="station">Real station: 230 per car</option></select></label>
+    <label>Doors <input type="number" id="setDoors" min="2" max="8"></label>
+    <label>GenAI counts a frame every (seconds) <input type="number" id="setEvery" min="5" max="300"></label>
+    <label>Hold a light at least (seconds) before it relaxes <input type="number" id="setHold" min="0" max="60"></label>
+    <div class="bar" style="justify-content:space-between"><button type="button" id="forgetKey">Forget key</button><span class="bar"><button type="button" id="cancelSettings">Cancel</button><button type="submit" class="primary">Save</button></span></div>
+  </form>
+</dialog>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

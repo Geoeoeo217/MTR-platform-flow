@@ -10,7 +10,7 @@ Start here: **https://geoeoeo217.github.io/MTR-platform-flow/**
 
 | What | Public link | File |
 |---|---|---|
-| **Live AI system**: webcam people-counting, Claude vision + announcements, learning forecast, live lights | https://geoeoeo217.github.io/MTR-platform-flow/live/ | `live/` |
+| **Live AI system**: input → counts → capacity → door recommendation → lights and announcement | https://geoeoeo217.github.io/MTR-platform-flow/live/ | `live/` |
 | 2D simulator: side-by-side comparison with live scores | https://geoeoeo217.github.io/MTR-platform-flow/platform-flow/ | `platform-flow/index.html` |
 | 3D platform: tunnels, door lights, passengers arriving and getting off | https://geoeoeo217.github.io/MTR-platform-flow/platform-flow/3d.html | `platform-flow/3d.html` |
 | Demo reel: self-playing video demo with captions | https://geoeoeo217.github.io/MTR-platform-flow/demo/ | `demo/index.html` |
@@ -21,22 +21,25 @@ Each file runs offline in any browser: double-click it, or use VS Code's Live Se
 
 ## The live AI system (`live/`)
 
-The simulations show the idea; `live/` is the working system, running in the browser.
+The simulations show the idea; `live/` is the working system, running in the browser. Press **▶ Run demo** and it runs the whole workflow, each step using the previous step's output:
 
-| Stage | What runs | AI type |
+| Step | What happens | Where the numbers come from |
 |---|---|---|
-| 1. Camera AI | COCO-SSD person detection (TensorFlow.js) on a webcam or video counts people in each door's **queue zone**, inside each **train car**, and crossing each door's **exit line** while the doors are open | Computer vision |
-| 1b. GenAI vision | Every few seconds the GenAI model (Claude, or Qwen3-VL through Ollama) reads a camera frame with the areas labelled and counts people per area, backing up the detector in dense crowds. With Claude the higher of the two counts is used; a small local Ollama model's count is shown for comparison only, because it is not accurate enough to steer the lights | Generative AI (vision) |
-| 2. Forecast | Share of riders who get off at each door = average for the same weekday and 15-minute slot over the most recent 2 weeks, times a correction learned from today’s trains, times people on board now. Every train counted by the exit camera is added to the history | Learning forecast |
-| 3. Decision | room = capacity − on board + forecast getting off; ratio = queue ÷ room; green < 0.7, amber < 1.0, else red; red at once if the queue area is full; a light holds a few seconds before it relaxes | Rules on AI outputs |
-| 4. Communication | When the lights change, the GenAI model writes the tunnel-sign line and a platform announcement in English, 繁體中文 and 简体中文, plus a note for staff | Generative AI (text) |
+| 1. Input | Webcam, an uploaded video or photo, the **Virtual CCTV** (simulated 3D video), a **demo scenario** (simulated counts) or **manual entry** | The badge on the input card always says which, and whether the data is real, simulated or typed |
+| 2. Counts | People queuing at each door, and people on board each car | Camera inputs: COCO-SSD person detection (TensorFlow.js), with confidence per door. Scenarios and manual entry: the numbers shown, editable. On board: a car camera area, the entered numbers, or a clearly labelled simulated train-load feed |
+| 3. Capacity | room = car capacity − on board + forecast getting off | The table shows the working for every door, e.g. `6 − 3 + 0` |
+| 4. Recommendation | The green door with the most spare space (room − queue); amber if no door is green; “all doors full” if none | The card explains why, and which doors to avoid |
+| 5. Guidance | Tunnel sign, door lights, and an optional GenAI announcement in English, 繁體中文 and 简体中文 | The sign uses rule-based text unless a GenAI announcement for the current lights exists; the badge says which |
 
-**Try it:** open the live link, click **Start webcam**, and stand in the queue zones. No camera or crowd handy? Click **Virtual CCTV (3D)**: a live 3D platform filmed from a wall-mounted camera angle, with people walking in, queuing, and getting on and off the train in step with the system's train cycle. The camera AI and GenAI read it exactly like a real feed, with queue areas and exit lines already lined up with the doors. **Manual counts** lets you type queue numbers to test the decisions without any camera. The GenAI parts can run on either of two models, chosen in **Settings & API key**:
+**Checks and labels.** Low detection confidence, a door with no counting area, on-board numbers above capacity (capped), invalid typed numbers (ignored and outlined), disagreement between the camera AI and Claude, and “no people detected” all raise a visible flag on the recommendation. GenAI output always says which model wrote it and turns “out of date” when the lights change.
 
-- **Ollama (free, on your own computer).** See *Using Ollama* below.
-- **Claude.** Paste your own Anthropic API key. It is used only from your browser.
+**Two scenarios** (simulated data): A, a morning rush with the crowd by the stairs at 1A–2A, and B, an evening with full middle cars and the crowd at 3A–4A. The recommendation switches from 4A to 1A. The **before/after** panel estimates the effect if a set share of people (default 60%, in Settings › Advanced) follow the lights. It is an estimate under that assumption, not a measurement.
 
-Without either, the camera AI, forecast and lights still run.
+**Forecast of people getting off.** A transparent baseline: the share of riders who got off at each door for the same weekday and 15-minute slot, averaged over the latest 2 weeks of history (4 weeks of sample data standing in for MTR records). When an exit line on a real camera counts people getting off, that train is added and today’s correction updates. Counts from the virtual CCTV are kept for the session only. Nothing else is trained.
+
+**GenAI.** Optional, chosen in Settings: Ollama (free, local), Claude (your own API key, used only from your browser) or off. With Claude, a frame count can back up the detector in dense crowds; a small local model’s count is shown for comparison only. Without GenAI, everything except the announcement still works.
+
+**Backup.** The previous version of the live system is kept unchanged in `archive/live-v1/` (online at `/archive/live-v1/`), and tagged `v1-backup` in git.
 
 ### Using Ollama (free)
 
@@ -118,7 +121,8 @@ Only 4 new devices are needed. Everything else comes from systems MTR already ru
 ## Project layout
 
 ```
-live/                      live AI system: camera AI, Claude, forecast, lights
+live/                      live AI system: camera AI, capacity, recommendation, lights, GenAI
+archive/live-v1/           backup of the previous live system
 platform-flow/index.html   2D simulator (model + UI)
 platform-flow/3d.html      3D platform view (same model)
 hardware-3d.html           3D hardware concept (4 devices)

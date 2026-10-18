@@ -1,7 +1,7 @@
 // Generative AI in two roles, using either Claude (API key) or a free local model through Ollama:
 //   1. Crowd analyst: looks at a camera frame (with the counting areas drawn on it) and counts people per area.
 //      This backs up the on-device detector, which undercounts when people stand close together.
-//   2. Communicator: turns the current decision into sign text, multilingual announcements and a staff note.
+//   2. Communicator: turns the current decision into sign text and a short announcement in three languages.
 // Claude runs from the browser with the user's own API key; Ollama runs entirely on this computer.
 
 import Anthropic from 'https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@0.131.0/+esm';
@@ -30,11 +30,10 @@ const COUNT_SCHEMA = {
 const GUIDE_SCHEMA = {
   type: 'object',
   additionalProperties: false,
-  required: ['sign_en', 'sign_zh_hant', 'sign_zh_hans', 'announcement_en', 'announcement_zh_hant', 'announcement_zh_hans', 'staff_note'],
+  required: ['sign_en', 'sign_zh_hant', 'sign_zh_hans', 'announcement_en', 'announcement_zh_hant', 'announcement_zh_hans'],
   properties: {
     sign_en: { type: 'string' }, sign_zh_hant: { type: 'string' }, sign_zh_hans: { type: 'string' },
     announcement_en: { type: 'string' }, announcement_zh_hant: { type: 'string' }, announcement_zh_hans: { type: 'string' },
-    staff_note: { type: 'string' },
   },
 };
 
@@ -48,7 +47,6 @@ Fields:
 - announcement_en: one or two calm, polite sentences in English, MTR style, asking passengers to use the walk_to_doors and avoid the full doors.
 - announcement_zh_hant: that announcement in Traditional Chinese (Hong Kong).
 - announcement_zh_hans: that announcement in Simplified Chinese.
-- staff_note: one or two sentences in English for staff: which doors are full, why (queue versus space), and what to watch.
 Replace <walk_to_doors> with the actual doors from the input. Use door labels exactly as given. If walk_to_doors is empty, ask passengers to spread along the platform. Never tell people to run or rush.`;
 
 export class GenAI {
@@ -67,8 +65,22 @@ export class GenAI {
     if (ollamaModel) this.ollamaModel = ollamaModel;
   }
 
-  get enabled() { return this.provider === 'ollama' || !!this.client; }
-  get name() { return this.provider === 'ollama' ? `Ollama · ${this.ollamaModel}` : 'Claude'; }
+  get enabled() { return this.provider === 'ollama' ? this.ollamaOk === true : this.provider === 'claude' && !!this.client; }
+
+  // Is the chosen model actually usable right now? Returns a sentence for the status line.
+  async check() {
+    if (this.provider === 'off') return 'GenAI is off.';
+    if (this.provider === 'claude') return this.client ? 'Claude: key set (checked on first use).' : 'Claude: add an API key in Settings.';
+    this.ollamaOk = false;
+    try {
+      const ctl = new AbortController(); const timer = setTimeout(() => ctl.abort(), 2500);
+      const res = await fetch(`${this.ollamaUrl}/api/tags`, { signal: ctl.signal }); clearTimeout(timer);
+      const names = ((await res.json()).models || []).map(m => m.name);
+      if (!names.includes(this.ollamaModel)) return `Ollama is running but doesn’t have ${this.ollamaModel}. Run: ollama pull ${this.ollamaModel}`;
+      this.ollamaOk = true; return `Ollama ready (${this.ollamaModel}).`;
+    } catch { return `Ollama not reachable at ${this.ollamaUrl}. Start the Ollama app on this computer, or choose Claude in Settings.`; }
+  }
+  get name() { return this.provider === 'ollama' ? `Ollama · ${this.ollamaModel}` : this.provider === 'claude' ? 'Claude' : 'GenAI (off)'; }
 
   async countCrowd(jpegB64, labels) {
     const prompt = `Areas to count: ${labels.join(', ')}. Return one entry per area, using these exact labels.`;

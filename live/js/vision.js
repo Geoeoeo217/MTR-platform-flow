@@ -67,18 +67,21 @@ export class Vision {
     return this.counts();
   }
 
+  // People per area, plus the detector's average confidence for the people it found in each area
   counts() {
-    const queue = {}, car = {};
+    const queue = {}, car = {}, score = {};
     for (const z of this.zones) {
       if (z.kind === 'exit') continue;
-      const n = this.persons.filter(p => {
+      const inside = this.persons.filter(p => {
         const px = p.x + p.w / 2, py = z.kind === 'queue' ? p.y + p.h : p.y + p.h / 2;   // feet for queues, centre for cars
         return z.pts ? inPoly(px, py, z.pts) : px >= z.x && px <= z.x + z.w && py >= z.y && py <= z.y + z.h;
-      }).length;
+      });
       const bucket = z.kind === 'queue' ? queue : car;
-      bucket[z.door] = (bucket[z.door] ?? 0) + n;
+      bucket[z.door] = (bucket[z.door] ?? 0) + inside.length;
+      if (z.kind === 'queue' && inside.length) score[z.door] = inside.reduce((s, p) => s + p.score, 0) / inside.length;
     }
-    return { queue, car, exits: { ...this.exits }, people: this.persons.length };
+    const mean = this.persons.length ? this.persons.reduce((s, p) => s + p.score, 0) / this.persons.length : null;
+    return { queue, car, score, mean, exits: { ...this.exits }, people: this.persons.length };
   }
 
   resetExits() { this.exits = {}; for (const t of this.tracks) t.side = {}; }
