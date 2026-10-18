@@ -13,7 +13,7 @@ Start here: **https://geoeoeo217.github.io/MTR-platform-flow/**
 | 2D simulator: side-by-side comparison with live scores | https://geoeoeo217.github.io/MTR-platform-flow/platform-flow/ | `platform-flow/index.html` |
 | 3D platform: tunnels, door lights, passengers arriving and getting off | https://geoeoeo217.github.io/MTR-platform-flow/platform-flow/3d.html | `platform-flow/3d.html` |
 | Prototype proof: results, charts, screenshots | https://geoeoeo217.github.io/MTR-platform-flow/proof/ | `proof/index.html` |
-| Hardware concept in 3D (4 devices) | https://geoeoeo217.github.io/MTR-platform-flow/model-3d-peron.html | `model-3d-peron.html` |
+| Hardware concept in 3D (4 devices) | https://geoeoeo217.github.io/MTR-platform-flow/hardware-3d.html | `hardware-3d.html` |
 
 Each file runs offline in any browser: double-click it, or use VS Code's Live Server. The 3D pages need internet access to load Three.js.
 
@@ -74,7 +74,7 @@ Only 4 new devices are needed. Everything else comes from systems MTR already ru
 ```
 platform-flow/index.html   2D simulator (model + UI)
 platform-flow/3d.html      3D platform view (same model)
-model-3d-peron.html        3D hardware / sensor concept
+hardware-3d.html        3D hardware / sensor concept
 proof/index.html           prototype proof page
 proof/run_benchmark.py     benchmark script
 proof/results.csv          120 benchmark runs

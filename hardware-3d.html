@@ -1,5 +1,5 @@
 <meta charset="utf-8">
-<title>Model 3D Peron Pintar</title>
+<title>Platform Flow Hardware</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -132,48 +132,48 @@ td small{display:block;font:400 10.5px/1.2 var(--mono);color:var(--muted);margin
     <div class="brand">
       <div class="mark" aria-hidden="true"><i></i><i></i><i></i></div>
       <div>
-        <h1>Model 3D Peron Pintar</h1>
-        <p class="sub">AI-Assisted Predictive Passenger Distribution · prototipe visual</p>
+        <h1>Platform Flow Hardware</h1>
+        <p class="sub">AI-Assisted Predictive Passenger Distribution · visual prototype</p>
       </div>
     </div>
-    <nav class="tabs" role="tablist" aria-label="Tampilan">
-      <button class="tab" role="tab" id="tab-alat" aria-selected="true"><span class="n">1</span>Alat-alat</button>
-      <button class="tab" role="tab" id="tab-mtr" aria-selected="false"><span class="n">2</span>Penerapan di stasiun &amp; kereta</button>
+    <nav class="tabs" role="tablist" aria-label="View">
+      <button class="tab" role="tab" id="tab-devices" aria-selected="true"><span class="n">1</span>Devices</button>
+      <button class="tab" role="tab" id="tab-mtr" aria-selected="false"><span class="n">2</span>In the station &amp; train</button>
     </nav>
   </header>
 
   <main class="main">
-    <section class="stage" id="stage" aria-label="Tampilan 3D">
+    <section class="stage" id="stage" aria-label="3D view">
       <canvas id="c"></canvas>
       <div id="labels"></div>
-      <div class="hint"><span id="hint">Seret untuk memutar · scroll/pinch untuk zoom · klik label untuk detail</span></div>
+      <div class="hint"><span id="hint">Drag to orbit · scroll or pinch to zoom · click a label for details</span></div>
     </section>
 
     <aside class="panel">
       <!-- Panel 1: devices -->
-      <div id="panel-alat">
+      <div id="panel-devices">
         <div class="sec">
-          <span class="eyebrow">4 perangkat yang kami bangun</span>
-          <h2>Perangkat sistem</h2>
+          <span class="eyebrow">4 devices we build</span>
+          <h2>System devices</h2>
           <div class="devlist" id="devlist"></div>
         </div>
         <div class="sec">
-          <span class="eyebrow">Dipakai dari MTR · tanpa alat baru</span>
+          <span class="eyebrow">Reused from MTR · no new hardware</span>
           <dl>
-            <div><dt>Isi tiap gerbong</dt><dd>Data beban dari sensor bawaan kereta (dipakai untuk sistem rem).</dd></div>
-            <div><dt>Penumpang turun (historis)</dt><dd>Dihitung oleh kamera CCTV kami, ditambah selisih beban gerbong sebelum dan sesudah pintu dibuka.</dd></div>
-            <div><dt>Kamera</dt><dd>CCTV peron yang sudah terpasang bisa dipakai ulang.</dd></div>
+            <div><dt>Load per car</dt><dd>From the train's built-in load-weighing sensors (already used for braking).</dd></div>
+            <div><dt>People getting off (historical)</dt><dd>Counted by our CCTV camera, plus the change in car load before and after the doors open.</dd></div>
+            <div><dt>Camera</dt><dd>Existing platform CCTV can be reused.</dd></div>
           </dl>
-          <div class="proto"><dt>Prototipe hackathon</dt><dd>Webcam · laptop · ESP32 · strip LED WS2812B. Data beban gerbong dan data historis disimulasikan.</dd></div>
+          <div class="proto"><dt>Hackathon prototype</dt><dd>Webcam · laptop · ESP32 · WS2812B LED strip. Car load and historical data are simulated.</dd></div>
         </div>
-        <div class="sec" id="detail-alat"></div>
+        <div class="sec" id="detail-devices"></div>
         <div class="sec">
-          <span class="eyebrow">Alur data</span>
-          <div class="flow"><span>Sensor</span><i>→</i><span>Edge AI</span><i>→</i><span>Prediksi</span><i>→</i><span>Lampu</span><i>→</i><span>Evaluasi</span></div>
+          <span class="eyebrow">Data flow</span>
+          <div class="flow"><span>Sensor</span><i>→</i><span>Edge AI</span><i>→</i><span>Predict</span><i>→</i><span>Lights</span><i>→</i><span>Evaluate</span></div>
           <div class="legend">
-            <div><span class="sw go"></span><span><b>Hijau</b> · diperkirakan masih ada ruang, direkomendasikan</span></div>
-            <div><span class="sw mid"></span><span><b>Kuning</b> · kapasitas terbatas</span></div>
-            <div><span class="sw stop"></span><span><b>Merah</b> · sudah padat atau diperkirakan padat</span></div>
+            <div><span class="sw go"></span><span><b>Green</b> · room predicted, recommended</span></div>
+            <div><span class="sw mid"></span><span><b>Amber</b> · limited room</span></div>
+            <div><span class="sw stop"></span><span><b>Red</b> · full now or predicted full</span></div>
           </div>
         </div>
       </div>
@@ -181,51 +181,51 @@ td small{display:block;font:400 10.5px/1.2 var(--mono);color:var(--muted);margin
       <!-- Panel 2: station simulation -->
       <div id="panel-mtr" hidden>
         <div class="sec">
-          <span class="eyebrow">Simulasi · Senin pagi, jam sibuk</span>
+          <span class="eyebrow">Simulation · Monday morning rush</span>
           <div class="ctrls">
-            <label class="switch"><input type="checkbox" id="ai" checked><span></span>Sistem AI aktif</label>
-            <div class="seg" role="group" aria-label="Kecepatan">
+            <label class="switch"><input type="checkbox" id="ai" checked><span></span>AI system on</label>
+            <div class="seg" role="group" aria-label="Speed">
               <button id="sp1" data-speed="1" aria-pressed="true">1×</button>
               <button id="sp2" data-speed="2" aria-pressed="false">2×</button>
               <button id="sp4" data-speed="4" aria-pressed="false">4×</button>
             </div>
           </div>
-          <div class="phase"><i></i><span id="phase">Menunggu kereta</span></div>
+          <div class="phase"><i></i><span id="phase">Waiting for train</span></div>
         </div>
         <div class="sec">
-          <span class="eyebrow">Zona antrean · kereta berikut</span>
+          <span class="eyebrow">Queue zones · next train</span>
           <table>
-            <thead><tr><th>Zona</th><th>Antre</th><th>Ruang diprediksi<br>(kap − isi + turun)</th><th>Lampu</th></tr></thead>
+            <thead><tr><th>Zone</th><th>Queue</th><th>Predicted room<br>(cap − load + off)</th><th>Light</th></tr></thead>
             <tbody id="zrows"></tbody>
           </table>
-          <p class="note">Ruang diprediksi = kapasitas gerbong − isi dari data beban kereta MTR + perkiraan turun dari data historis (Senin 09.00). Lampu dihitung dari antrean dibanding ruang itu.</p>
+          <p class="note">Predicted room = car capacity − load from MTR's train data + forecast of people getting off from historical data (Monday 09:00). The light compares the queue with that room.</p>
         </div>
         <div class="sec">
-          <span class="eyebrow">Evaluasi distribusi</span>
+          <span class="eyebrow">Distribution check</span>
           <div class="kpis">
-            <div class="kpi"><span class="eyebrow">Ketimpangan antrean</span><b id="m-cv">–</b></div>
-            <div class="kpi"><span class="eyebrow">Tertinggal (kereta terakhir)</span><b id="m-left">–</b></div>
-            <div class="kpi wide"><span class="eyebrow">Rata-rata penumpang tertinggal per kereta</span>
+            <div class="kpi"><span class="eyebrow">Queue imbalance</span><b id="m-cv">–</b></div>
+            <div class="kpi"><span class="eyebrow">Left behind (last train)</span><b id="m-left">–</b></div>
+            <div class="kpi wide"><span class="eyebrow">Average left behind per train</span>
               <div class="cmp" style="margin-top:6px">
-                <div><b id="m-on">–</b>AI aktif</div>
-                <div><b id="m-off">–</b>tanpa AI</div>
+                <div><b id="m-on">–</b>AI on</div>
+                <div><b id="m-off">–</b>without AI</div>
               </div>
             </div>
           </div>
-          <p class="note">Coba matikan AI beberapa kereta, lalu nyalakan lagi. Tanpa arahan, penumpang menumpuk di zona dekat koridor (Zona 3–4).</p>
+          <p class="note">Turn the AI off for a few trains, then back on. Without guidance, people pile up in the zones nearest the corridor (zones 3–4).</p>
         </div>
         <div class="sec">
-          <span class="eyebrow">Sudut kamera</span>
+          <span class="eyebrow">Camera</span>
           <div class="views">
-            <button class="devbtn" data-view="overview">Seluruh peron</button>
-            <button class="devbtn" data-view="corridor">Koridor &amp; panel arah</button>
-            <button class="devbtn" data-view="platform">Antrean peron</button>
-            <button class="devbtn" data-view="train">Pintu kereta</button>
+            <button class="devbtn" data-view="overview">Whole platform</button>
+            <button class="devbtn" data-view="corridor">Corridor &amp; sign</button>
+            <button class="devbtn" data-view="platform">Platform queues</button>
+            <button class="devbtn" data-view="train">Train doors</button>
           </div>
         </div>
         <div class="sec" id="detail-mtr">
-          <span class="eyebrow">Perangkat</span>
-          <p class="muted">Klik label perangkat di model (titik hijau) untuk melihat fungsi dan posisinya di stasiun.</p>
+          <span class="eyebrow">Devices</span>
+          <p class="muted">Click a device label in the model (green dot) to see what it does and where it sits in the station.</p>
         </div>
       </div>
     </aside>
@@ -241,30 +241,30 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ---------- device copy ---------- */
 const DEV = {
-  cctv:{name:'Kamera CCTV + AI', tag:'Hitung antrean',
-    role:'Menghitung jumlah orang di setiap zona antrean dengan model deteksi orang (mis. YOLO), dan menghitung penumpang yang turun di depan pintu. Satu kamera menggantikan sensor antrean dan sensor pintu terpisah.',
-    where:'Langit-langit peron, menghadap barisan antrean. Bisa memakai CCTV yang sudah terpasang.',
-    data:'Hanya angka: jumlah orang per zona setiap 1–2 detik. Video diproses di stasiun dan tidak disimpan.',
-    proto:'Webcam USB di atas maket + YOLOv8 di laptop.',
-    mtr:'Dipasang di rel kabel atas peron, menyorot zona 1–4 dari arah pintu kaca.'},
-  edge:{name:'Unit Edge AI', tag:'Otak sistem',
-    role:'Menjalankan deteksi orang, model prediksi kepadatan, dan aturan rekomendasi zona di stasiun, tanpa bergantung internet.',
-    where:'Kabinet teknik di ujung peron.',
-    data:'Menerima data beban gerbong dari sistem kereta MTR, mengirim warna lampu ke panel, dan ringkasan ke ruang kontrol staf.',
-    proto:'Laptop (atau Raspberry Pi 5).',
-    mtr:'Kabinet di dinding belakang. Terhubung ke kamera, sensor kereta, dan semua lampu.'},
-  sign:{name:'Panel arah di koridor', tag:'Arahan awal',
-    role:'Menunjukkan zona yang direkomendasikan sebelum penumpang sampai di peron, lengkap dengan nomor zona dan panah.',
-    where:'Mulut koridor/terowongan dan ujung atas eskalator.',
-    data:'Warna, panah, dan label per zona. Tidak hanya warna, supaya terbaca oleh penumpang buta warna.',
-    proto:'Strip LED WS2812B + ESP32, atau layar kecil.',
-    mtr:'Digantung di mulut koridor. Penumpang yang datang dari koridor memilih zona dari sini.'},
-  strip:{name:'Lampu indikator pintu', tag:'Arahan dekat pintu',
-    role:'Konfirmasi di dekat area naik: lampu hijau, kuning, atau merah di atas pintu kaca peron setiap zona.',
-    where:'Di atas pintu kaca peron (PSD), satu per zona.',
-    data:'Warna per zona. Di dunia nyata diberi jeda minimum (mis. 30 detik) agar tidak berkedip-kedip.',
-    proto:'Potongan strip LED WS2812B, dikendalikan ESP32 yang sama dengan panel koridor.',
-    mtr:'Lampu di atas pintu kaca tiap gerbong.'}
+  cctv:{name:'CCTV camera + AI', tag:'Counts queues',
+    role:'Counts people in each queue zone with a person-detection model (e.g. YOLO), and counts people getting off at the doors. One camera replaces separate queue and door sensors.',
+    where:'Platform ceiling, facing the queues. Existing CCTV can be reused.',
+    data:'Numbers only: people per zone every 1–2 seconds. Video is processed in the station and never stored.',
+    proto:'USB webcam above a tabletop model + YOLOv8 on a laptop.',
+    mtr:'Mounted on the overhead cable gantry, covering zones 1–4 from the screen-door side.'},
+  edge:{name:'Edge AI unit', tag:'The brain',
+    role:'Runs person detection, the crowding forecast and the zone recommendation rules inside the station, with no internet dependency.',
+    where:'Equipment cabinet at the end of the platform.',
+    data:'Receives car load data from MTR train systems, sends light colours to the signs, and a summary to the staff control room.',
+    proto:'Laptop (or Raspberry Pi 5).',
+    mtr:'Cabinet on the back wall. Connected to the camera, train data and every light.'},
+  sign:{name:'Corridor sign', tag:'Early guidance',
+    role:'Shows the recommended zone before passengers reach the platform, with zone numbers and arrows.',
+    where:'Corridor or tunnel mouth, and the top of escalators.',
+    data:'Colour, arrow and text per zone. Not colour alone, so colour-blind passengers can read it.',
+    proto:'WS2812B LED strip + ESP32, or a small screen.',
+    mtr:'Hung at the corridor mouth. People arriving from the corridor choose a zone here.'},
+  strip:{name:'Door indicator light', tag:'Guidance at the door',
+    role:'Confirmation at the boarding point: a green, amber or red light above the platform screen door of each zone.',
+    where:'Above the platform screen doors (PSD), one per zone.',
+    data:'Colour per zone. In real use a minimum hold time (e.g. 30 seconds) stops it flickering.',
+    proto:'A short WS2812B LED strip, driven by the same ESP32 as the corridor sign.',
+    mtr:'A light above the screen doors of every car.'}
 };
 const ORDER = ['cctv','edge','sign','strip'];
 
@@ -310,7 +310,7 @@ function weighted(w){ const s = w.reduce((a,b)=>a+b,0); let r = Math.random()*s;
 
 const HEX = {go:0x1fae5b, mid:0xe3a90c, stop:0xd8393b, off:0x3b4547};
 const CSS = {go:'#1fae5b', mid:'#e3a90c', stop:'#d8393b', off:'#58646a'};
-const STATE_TXT = {go:'Longgar', mid:'Terbatas', stop:'Padat', off:'Mati'};
+const STATE_TXT = {go:'Room', mid:'Limited', stop:'Full', off:'Off'};
 
 function addLights(s, span, cx=0){
   s.add(new THREE.HemisphereLight(0xe4f0ef, 0x1c2426, .7));
@@ -360,7 +360,7 @@ function drawSign(S, states, best, arrows){
     ctx.fillText(arrows[i], x+w-18, y+124);
     ctx.textAlign = 'left';
     ctx.font = '700 30px "IBM Plex Sans",Arial,sans-serif';
-    const t = st==='off' ? 'ZONA '+(i+1) : (i===best ? '★ DISARANKAN' : STATE_TXT[st].toUpperCase());
+    const t = st==='off' ? 'ZONE '+(i+1) : (i===best ? '★ BEST' : STATE_TXT[st].toUpperCase());
     ctx.fillText(t, x+22, y+h-26);
   }
   S.tex.needsUpdate = true;
@@ -368,7 +368,7 @@ function drawSign(S, states, best, arrows){
 
 /* ---------- labels ---------- */
 const labels = [];
-let showLabels = true, current = 'alat', selected = null;
+let showLabels = true, current = 'devices', selected = null;
 function addLabel(sc, obj, html, opts={}){
   const el = document.createElement(opts.key ? 'button' : 'div');
   el.className = 'lbl ' + (opts.key ? 'dev' : 'info');
@@ -414,7 +414,7 @@ function buildAlat(){
     mesh(C(r*1.005, r*1.005, .02, 48), mat(0x0d7a70,{roughness:.5}), 0,.51,0, ped, false);
     const g = build(); g.position.y = .52; ped.add(g);
     A.items[key] = {ped, focus: V3(x, labelY*.55, z)};
-    addLabel('alat', ped, DEV[key].name, {key, off:[0,labelY,0]});
+    addLabel('devices', ped, DEV[key].name, {key, off:[0,labelY,0]});
     return g;
   };
 
@@ -438,7 +438,7 @@ function buildAlat(){
     return g;
   });
 
-  /* Panel arah (sign) */
+  /* Corridor sign */
   const S1 = makeSign();
   place('sign', 2.3, -.6, 1.6, 3.35, () => {
     const g = new THREE.Group();
@@ -625,9 +625,9 @@ function buildMTR(){
   addLabel('mtr', sg, DEV.sign.name, {key:'sign', off:[0,3.6,0]});
   addLabel('mtr', SIM.zones[0].ind, DEV.strip.name, {key:'strip', off:[0,.45,0]});
   const exitL = new THREE.Object3D(); exitL.position.set(ESC_X,3.4,5.5); s.add(exitL);
-  addLabel('mtr', exitL, 'Eskalator keluar', {});
+  addLabel('mtr', exitL, 'Exit escalator', {});
   const corrL = new THREE.Object3D(); corrL.position.set(CORR_X,1.2,15); s.add(corrL);
-  addLabel('mtr', corrL, 'Koridor masuk', {});
+  addLabel('mtr', corrL, 'Entrance corridor', {});
 
   SIM.items = {
     cctv:{focus:V3(0,3,0), view:[V3(6,7,10)]},
@@ -788,13 +788,13 @@ function computeLights(){
 
 /* phases */
 const PHASE_TXT = {
-  gap:'Menunggu kereta · AI memprediksi ruang di kereta berikut',
-  arrive:'Kereta tiba · data beban tiap gerbong diterima dari sistem kereta MTR',
-  open:'Pintu dibuka',
-  alight:'Penumpang turun · dihitung kamera CCTV',
-  board:'Penumpang naik dari tiap zona',
-  close:'Pintu ditutup',
-  depart:'Kereta berangkat · hasil dicatat ke data historis'
+  gap:'Waiting for train · AI predicts room on the next train',
+  arrive:'Train arriving · car loads received from MTR train systems',
+  open:'Doors opening',
+  alight:'People getting off · counted by the CCTV camera',
+  board:'People boarding from each zone',
+  close:'Doors closing',
+  depart:'Train departing · results added to historical data'
 };
 function go(ph){ SIM.phase = ph; SIM.t = 0; $('#phase').textContent = PHASE_TXT[ph]; }
 function updateSim(dt){
@@ -824,7 +824,7 @@ function updateSim(dt){
 /* UI */
 function buildRows(){
   $('#zrows').innerHTML = [0,1,2,3].map(i => `<tr>
-    <td><span class="zname"><span class="chip" id="zc${i}"></span>Zona ${i+1}</span><small>Gerbong ${i+1}</small></td>
+    <td><span class="zname"><span class="chip" id="zc${i}"></span>Zone ${i+1}</span><small>Car ${i+1}</small></td>
     <td class="num" id="zq${i}">0</td>
     <td class="num"><span id="zf${i}">0</span><small id="zx${i}"></small></td>
     <td><span class="state" id="zs${i}">–</span></td></tr>`).join('');
@@ -837,24 +837,24 @@ function updateUI(){
     $('#zx'+i).textContent = `${CAP}−${SIM.inc.load[i]}+${SIM.inc.ap[i]}`;
     const st = SIM.lights[i];
     $('#zc'+i).style.background = `var(--${st})`;
-    $('#zs'+i).textContent = st==='off' ? 'Mati' : (i===SIM.best ? 'Disarankan' : STATE_TXT[st]);
-    SIM.zones[i].lab.el.innerHTML = `<span class="dot" style="background:${CSS[st]}"></span><b>Zona ${i+1}</b> · ${q} antre`;
+    $('#zs'+i).textContent = st==='off' ? 'Off' : (i===SIM.best ? 'Best' : STATE_TXT[st]);
+    SIM.zones[i].lab.el.innerHTML = `<span class="dot" style="background:${CSS[st]}"></span><b>Zone ${i+1}</b> · ${q} queuing`;
   });
-  SIM.cars.forEach((c,i) => { c.lab.el.innerHTML = `Gerbong ${i+1} · ${Math.round(SIM.trainLoad[i]/CAP*100)}%`; });
+  SIM.cars.forEach((c,i) => { c.lab.el.innerHTML = `Car ${i+1} · ${Math.round(SIM.trainLoad[i]/CAP*100)}%`; });
   const mean = Q.reduce((a,b)=>a+b,0)/4;
   if(mean < 1) $('#m-cv').textContent = '–';
   else {
     const sd = Math.sqrt(Q.reduce((a,q)=>a+(q-mean)**2,0)/4), cv = sd/mean*100;
-    $('#m-cv').textContent = `${Math.round(cv)}% · ${cv < 25 ? 'merata' : cv < 50 ? 'sedang' : 'timpang'}`;
+    $('#m-cv').textContent = `${Math.round(cv)}% · ${cv < 25 ? 'even' : cv < 50 ? 'moderate' : 'uneven'}`;
   }
-  $('#m-left').textContent = SIM.lastLeft == null ? '–' : `${SIM.lastLeft} orang`;
-  const avg = a => a.length ? (a.reduce((x,y)=>x+y,0)/a.length).toFixed(1) + ` · ${a.length} kereta` : '–';
+  $('#m-left').textContent = SIM.lastLeft == null ? '–' : `${SIM.lastLeft} people`;
+  const avg = a => a.length ? (a.reduce((x,y)=>x+y,0)/a.length).toFixed(1) + ` · ${a.length} trains` : '–';
   $('#m-on').textContent = avg(SIM.results.on);
   $('#m-off').textContent = avg(SIM.results.off);
 }
 
 /* ---------- scenes, views, selection ---------- */
-const scenes = {alat: buildAlat(), mtr: null};
+const scenes = {devices: buildAlat(), mtr: null};
 SIM.inc = genTrain(); SIM.trainLoad = SIM.inc.load.slice();
 scenes.mtr = buildMTR();
 buildRows();
@@ -867,14 +867,14 @@ for(let n=0;n<34;n++){
 computeLights(); go('gap'); SIM.t = 4;
 
 const VIEWS = {
-  alat:{pos:V3(0,7.4,13.8), tgt:V3(0,1.3,-.6)},
+  devices:{pos:V3(0,7.4,13.8), tgt:V3(0,1.3,-.6)},
   overview:{pos:V3(6,25,31), tgt:V3(0,0,-.5)},
   corridor:{pos:V3(17,6.5,23), tgt:V3(8,1.6,5)},
   platform:{pos:V3(-24,6.5,9), tgt:V3(-8,1,-1.5)},
   train:{pos:V3(-9,3.4,3.2), tgt:V3(-4,1.3,-4)}
 };
-const saved = {alat:{pos:VIEWS.alat.pos.clone(), tgt:VIEWS.alat.tgt.clone()}, mtr:{pos:VIEWS.overview.pos.clone(), tgt:VIEWS.overview.tgt.clone()}};
-camera.position.copy(saved.alat.pos); controls.target.copy(saved.alat.tgt);
+const saved = {devices:{pos:VIEWS.devices.pos.clone(), tgt:VIEWS.devices.tgt.clone()}, mtr:{pos:VIEWS.overview.pos.clone(), tgt:VIEWS.overview.tgt.clone()}};
+camera.position.copy(saved.devices.pos); controls.target.copy(saved.devices.tgt);
 
 let fly = null;
 function startFly(pos, tgt){
@@ -894,15 +894,15 @@ function detailHTML(key, withMtr){
     <h3>${d.name}</h3>
     <p>${d.role}</p>
     <dl>
-      <div><dt>${withMtr ? 'Di stasiun ini' : 'Dipasang di'}</dt><dd>${withMtr ? d.mtr : d.where}</dd></div>
-      <div><dt>Data yang dikirim</dt><dd>${d.data}</dd></div>
-      <div class="proto"><dt>Versi prototipe hackathon</dt><dd>${d.proto}</dd></div>
+      <div><dt>${withMtr ? 'In this station' : 'Installed at'}</dt><dd>${withMtr ? d.mtr : d.where}</dd></div>
+      <div><dt>Data it sends</dt><dd>${d.data}</dd></div>
+      <div class="proto"><dt>Hackathon prototype version</dt><dd>${d.proto}</dd></div>
     </dl>`;
 }
 function select(key, fly){
   selected = key;
-  if(current === 'alat'){
-    $('#detail-alat').innerHTML = detailHTML(key, false);
+  if(current === 'devices'){
+    $('#detail-devices').innerHTML = detailHTML(key, false);
     document.querySelectorAll('#devlist .devbtn').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.key === key)));
     if(fly) flyToTarget(A.items[key].focus, 6);
   } else {
@@ -919,16 +919,16 @@ function setTab(name){
   saved[current] = {pos:camera.position.clone(), tgt:controls.target.clone()};
   current = name; fly = null;
   camera.position.copy(saved[name].pos); controls.target.copy(saved[name].tgt);
-  $('#tab-alat').setAttribute('aria-selected', String(name==='alat'));
+  $('#tab-devices').setAttribute('aria-selected', String(name==='devices'));
   $('#tab-mtr').setAttribute('aria-selected', String(name==='mtr'));
-  $('#panel-alat').hidden = name !== 'alat';
+  $('#panel-devices').hidden = name !== 'devices';
   $('#panel-mtr').hidden = name !== 'mtr';
   selected = null;
-  if(name === 'alat') select(document.querySelector('#devlist [aria-pressed="true"]')?.dataset.key || 'cctv', false);
-  else $('#detail-mtr').innerHTML = '<span class="eyebrow">Perangkat</span><p class="muted">Klik label perangkat di model (titik hijau) untuk melihat fungsi dan posisinya di stasiun.</p>';
-  try{ history.replaceState(null,'', name==='mtr' ? '#mtr' : '#alat'); }catch(e){}
+  if(name === 'devices') select(document.querySelector('#devlist [aria-pressed="true"]')?.dataset.key || 'cctv', false);
+  else $('#detail-mtr').innerHTML = '<span class="eyebrow">Devices</span><p class="muted">Click a device label in the model (green dot) to see what it does and where it sits in the station.</p>';
+  try{ history.replaceState(null,'', name==='mtr' ? '#mtr' : '#devices'); }catch(e){}
 }
-$('#tab-alat').addEventListener('click', () => setTab('alat'));
+$('#tab-devices').addEventListener('click', () => setTab('devices'));
 $('#tab-mtr').addEventListener('click', () => setTab('mtr'));
 $('#ai').addEventListener('change', e => { SIM.ai = e.target.checked; computeLights(); updateUI(); });
 document.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => {
@@ -946,11 +946,11 @@ const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
 let down = null;
 canvas.addEventListener('pointerdown', e => { down = [e.clientX, e.clientY]; });
 canvas.addEventListener('pointerup', e => {
-  if(!down || Math.hypot(e.clientX-down[0], e.clientY-down[1]) > 5 || current !== 'alat') return;
+  if(!down || Math.hypot(e.clientX-down[0], e.clientY-down[1]) > 5 || current !== 'devices') return;
   const r = canvas.getBoundingClientRect();
   ptr.set((e.clientX-r.left)/r.width*2-1, -(e.clientY-r.top)/r.height*2+1);
   ray.setFromCamera(ptr, camera);
-  const hit = ray.intersectObjects(scenes.alat.children, true)[0];
+  const hit = ray.intersectObjects(scenes.devices.children, true)[0];
   let o = hit && hit.object;
   while(o && !o.userData.key) o = o.parent;
   if(o) select(o.userData.key, true);
@@ -973,7 +973,7 @@ function loop(){
     if(fly.k >= 1) fly = null;
   }
   controls.update();
-  if(current === 'alat') A.anims.forEach(f => f(tAll));
+  if(current === 'devices') A.anims.forEach(f => f(tAll));
   else {
     const sdt = dt * SIM.speed;
     for(let i=0;i<SIM.speed;i++) updateSim(sdt / SIM.speed);
@@ -984,8 +984,8 @@ function loop(){
   requestAnimationFrame(loop);
 }
 resize();
-saved.alat.pos = fitView(VIEWS.alat); saved.mtr.pos = fitView(VIEWS.overview);
-if(current === 'alat') camera.position.copy(saved.alat.pos); else camera.position.copy(saved.mtr.pos);
+saved.devices.pos = fitView(VIEWS.devices); saved.mtr.pos = fitView(VIEWS.overview);
+if(current === 'devices') camera.position.copy(saved.devices.pos); else camera.position.copy(saved.mtr.pos);
 updateUI(); loop();
 })();
 </script>
