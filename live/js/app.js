@@ -135,7 +135,7 @@ async function loop() {
   }
   vision.draw();
   update(counts);
-  setTimeout(loop, state.source === 'none' || state.source === 'manual' ? 400 : 120);
+  setTimeout(loop, state.source === 'none' || state.source === 'manual' ? 400 : 300);   // about 3 counts a second is plenty for queues
 }
 
 function claudeFresh() { return state.claude && Date.now() - state.claudeAt < cfg.aiEvery * 2000; }

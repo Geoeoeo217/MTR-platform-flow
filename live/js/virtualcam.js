@@ -183,12 +183,12 @@ export class VirtualCam {
     this.renderer.render(this.scene, this.camera);
   }
 
-  // A steady 30 fps timer (not requestAnimationFrame) so the feed keeps moving like a real camera
+  // A steady 20 fps timer (not requestAnimationFrame) so the feed keeps moving like a real camera
   start() {
     if (this.timer) return;
     let last = performance.now();
     this.running = true;
-    this.timer = setInterval(() => { const now = performance.now(); this.step(Math.min(0.1, (now - last) / 1000)); last = now; }, 33);
+    this.timer = setInterval(() => { const now = performance.now(); this.step(Math.min(0.1, (now - last) / 1000)); last = now; }, 50);
   }
   stop() { this.running = false; clearInterval(this.timer); this.timer = null; }
 
