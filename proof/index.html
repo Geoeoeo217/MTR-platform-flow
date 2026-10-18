@@ -1,0 +1,218 @@
+<meta charset="utf-8">
+<title>Admiralty Platform Flow Proof</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: an evidence dossier. Claim first (headline numbers), then live links, then the test that backs it, then screenshots and method. */
+:root{
+  --bg:#eef2f1; --panel:#ffffff; --ink:#13201d; --muted:#56665f; --line:#d3dcd9;
+  --accent:#1f4fa8; --accent-soft:#e2e9f7; --base:#8a9792;
+  --go:#18904f; --caution:#c08c00; --stop:#cf3328;
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1514; --panel:#172120; --ink:#e4ecea; --muted:#93a39f; --line:#2a3735;
+  --accent:#7ea2ee; --accent-soft:#1f2d45; --base:#6f7d79; --go:#3cc77a; --caution:#f0bb2a; --stop:#ff5f52; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1514; --panel:#172120; --ink:#e4ecea; --muted:#93a39f; --line:#2a3735;
+  --accent:#7ea2ee; --accent-soft:#1f2d45; --base:#6f7d79; --go:#3cc77a; --caution:#f0bb2a; --stop:#ff5f52; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15.5px;line-height:1.55}
+.wrap{max-width:1080px;margin:0 auto;padding-block:36px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:44px}
+section{display:grid;gap:16px;min-width:0}
+h1,h2,h3{font-family:var(--f-display);font-weight:600;line-height:1.05;margin:0;text-wrap:balance}
+h1{font-size:clamp(2.3rem,5.5vw,3.6rem);font-weight:700;text-transform:uppercase}
+h2{font-size:1.75rem;text-transform:uppercase;letter-spacing:.01em}
+h3{font-size:1.2rem}
+p{margin:0;max-width:68ch}
+.eyebrow,.lbl{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.lead{font-size:1.08rem;color:var(--muted)}
+.sig{display:inline-flex;gap:5px;vertical-align:middle;margin-right:10px}
+.sig i{width:11px;height:11px;border-radius:50%;display:block}
+.sig i:nth-child(1){background:var(--go)}.sig i:nth-child(2){background:var(--caution)}.sig i:nth-child(3){background:var(--stop)}
+.status{display:inline-flex;align-items:center;gap:8px;font-family:var(--f-mono);font-size:.78rem;border:1px solid var(--go);color:var(--go);padding:4px 10px;border-radius:99px;justify-self:start}
+.status::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--go)}
+
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px;display:grid;gap:4px;align-content:start}
+.kpi b{font-family:var(--f-display);font-size:2.6rem;font-weight:700;line-height:1;color:var(--accent);font-variant-numeric:tabular-nums}
+.kpi .from{font-family:var(--f-mono);font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.kpi p{font-size:.88rem}
+.note{font-size:.86rem;color:var(--muted)}
+
+.links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.link{background:var(--panel);border:1px solid var(--line);border-radius:6px;overflow:hidden;display:grid;grid-template-rows:auto 1fr;color:inherit;text-decoration:none}
+.link:hover{border-color:var(--accent)}
+.link:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.link img{display:block;width:100%;aspect-ratio:16/10;object-fit:cover;object-position:top;border-bottom:1px solid var(--line);background:#0b1110}
+.link div{padding:12px 14px;display:grid;gap:4px;align-content:start}
+.link span.go{font-family:var(--f-mono);font-size:.78rem;color:var(--accent)}
+.link p{font-size:.88rem;color:var(--muted)}
+
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:18px;display:grid;gap:12px;min-width:0}
+.charts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+svg{display:block;width:100%;height:auto}
+svg text{font-family:var(--f-mono);font-size:11px;fill:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.82rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.ln{width:18px;height:0;border-top:2.5px solid;display:inline-block}
+
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:640px;font-variant-numeric:tabular-nums;font-size:.88rem}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+thead th{font-family:var(--f-mono);font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+td em{font-style:normal;color:var(--accent);font-weight:600}
+td small{color:var(--muted);font-family:var(--f-mono);font-size:.75rem;margin-left:6px}
+
+.shots{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+figure{margin:0;display:grid;gap:6px}
+figure img{width:100%;border-radius:6px;border:1px solid var(--line);display:block}
+figcaption{font-size:.85rem;color:var(--muted)}
+
+.steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;counter-reset:s}
+.steps li{counter-increment:s;border-top:3px solid var(--accent);padding-top:10px;display:grid;gap:4px;align-content:start}
+.steps li::before{content:counter(s);font-family:var(--f-mono);font-size:.75rem;color:var(--accent)}
+.steps p{font-size:.86rem;color:var(--muted)}
+.cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+.cols ul{margin:0;padding-left:18px;display:grid;gap:6px;font-size:.93rem}
+code{font-family:var(--f-mono);font-size:.85em;background:var(--bg);border:1px solid var(--line);padding:1px 5px;border-radius:3px}
+
+@media (max-width:860px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.links,.charts,.shots,.cols{grid-template-columns:1fr}.steps{grid-template-columns:1fr 1fr}}
+@media (max-width:440px){.steps{grid-template-columns:1fr}.kpi b{font-size:2.1rem}}
+</style>
+
+<div class="wrap">
+  <header style="display:grid;gap:12px">
+    <span class="eyebrow"><span class="sig"><i></i><i></i><i></i></span>Prototype proof · AI-Assisted Predictive Passenger Distribution for MTR Stations</span>
+    <h1>Admiralty Platform Flow</h1>
+    <p class="lead">Dynamic green, amber and red lights in the access tunnels and above each platform door. An AI model predicts how much room each door will have on the next train and steers waiting passengers there before they pick a queue.</p>
+    <span class="status">Working prototype · runs in any browser</span>
+  </header>
+
+  <section aria-labelledby="h-res">
+    <h2 id="h-res">Result at Monday 09:00 rush</h2>
+    <div class="kpis">
+      <div class="kpi"><span class="lbl">Queue imbalance</span><b>−73%</b><span class="from">1.12 → 0.30</span><p>Queues across the 8 doors become far more even.</p></div>
+      <div class="kpi"><span class="lbl">Longest door queue</span><b>−78%</b><span class="from">189 → 41 people</span><p>No single door turns into a crush point.</p></div>
+      <div class="kpi"><span class="lbl">Left behind per hour</span><b>−99.7%</b><span class="from">7,309 → 22</span><p>People who could not board the next train because their door was full.</p></div>
+      <div class="kpi"><span class="lbl">Average wait</span><b>−45%</b><span class="from">131 s → 71 s</span><p>From reaching the platform to boarding.</p></div>
+    </div>
+    <p class="note">Average of 5 simulated hours, with 60% of passengers following the lights, 240 arrivals per minute and a train every 2 minutes. The alighting forecast also became 32% more accurate (error 5.6 → 3.8 passengers per car) after learning from each train.</p>
+  </section>
+
+  <section aria-labelledby="h-live">
+    <h2 id="h-live">Try the prototype</h2>
+    <div class="links">
+      <a class="link" href="https://claude.ai/artifact/VDGZh6gDjeEvW6bo8gvvN7" target="_blank" rel="noopener">
+        <img src="screens/sim2d.png" alt="2D simulator showing a crowded platform without guidance beside an even platform with AI lights">
+        <div><h3>2D simulator</h3><span class="go">Open live demo ↗</span><p>Two identical platforms side by side: without guidance and with AI lights. Live scores, imbalance chart, and the AI's per-door forecast table.</p></div>
+      </a>
+      <a class="link" href="https://claude.ai/artifact/7P5CKX3KCayqxPtwfe7eoh" target="_blank" rel="noopener">
+        <img src="screens/platform3d.png" alt="3D platform with passengers queuing at eight doors under green lights">
+        <div><h3>3D platform</h3><span class="go">Open live demo ↗</span><p>The same model in 3D: tunnels with signs, door lights, people arriving, queuing and getting off. Toggle the AI on and off.</p></div>
+      </a>
+      <div class="link">
+        <img src="screens/devices3d.png" alt="3D models of the hardware: CCTV camera, overhead sensor, door counter, corridor sign, load sensor, LED strip, edge AI unit">
+        <div><h3>Hardware concept</h3><p>The sensors and signs the system needs: CCTV people counting, overhead 3D sensor, door counter, car load sensor, floor LED strip, corridor sign and an edge AI unit.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-test">
+    <h2 id="h-test">Does it really spread passengers out?</h2>
+    <p>We tested it. Both platforms receive the exact same passengers and trains, so any difference comes from the lights alone. 120 runs: 4 scenarios × 6 compliance levels × 5 random seeds, 60 simulated minutes each.</p>
+    <div class="charts">
+      <div class="panel"><h3>Queue imbalance vs. share following the lights</h3><svg id="chA" viewBox="0 0 460 250" role="img" aria-label="Queue imbalance falls as more passengers follow the lights"></svg></div>
+      <div class="panel"><h3>People left behind per hour</h3><svg id="chB" viewBox="0 0 460 250" role="img" aria-label="People left behind falls to almost zero once 40 percent follow the lights"></svg></div>
+    </div>
+    <div class="legend">
+      <span><i class="ln" style="border-color:var(--accent)"></i>Mon 09:00 with AI</span>
+      <span><i class="ln" style="border-color:var(--go)"></i>Fri 18:30 with AI</span>
+      <span><i class="ln" style="border-color:var(--base);border-top-style:dashed"></i>Without guidance</span>
+    </div>
+    <p class="note">Even when only 1 in 5 passengers follows the lights, people left behind fall by more than 90% at rush hour. At 0% the AI platform behaves like the normal one, which confirms the effect comes from the guidance.</p>
+
+    <div class="panel">
+      <h3>All scenarios at 60% following the lights</h3>
+      <div class="scroll"><table>
+        <thead><tr><th>Scenario</th><th>Imbalance</th><th>Longest queue</th><th>Left behind / h</th><th>Avg wait</th><th>Forecast error</th></tr></thead>
+        <tbody id="tb"></tbody>
+      </table></div>
+      <p class="note">Each cell shows without guidance → <span style="color:var(--accent)">with AI</span>. Off-peak, nobody is left behind either way. The lights still even out queues, at a cost of about 1.5 seconds extra walking. Forecast error is the average miss in passengers per car: historical average → AI forecast.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-shots">
+    <h2 id="h-shots">Screenshots</h2>
+    <div class="shots">
+      <figure><img src="screens/sim2d.png" alt="2D simulator at 09:25 with live comparison scores"><figcaption>2D simulator at 09:25. Left: doors 2A, 3A and 6A overflow beside the tunnels. Right: the AI turns those doors red and sends people to 1A, 4A, 7A and 8A.</figcaption></figure>
+      <figure><img src="screens/platform3d.png" alt="3D platform overview"><figcaption>3D platform. Tunnel signs show the same 8 lights as the doors, so passengers choose before they reach the platform.</figcaption></figure>
+      <figure><img src="screens/station3d.png" alt="3D station showing sensors placed along the platform"><figcaption>Sensor placement along a platform: CCTV with AI counting, overhead 3D sensors and floor LED guidance per zone.</figcaption></figure>
+      <figure><img src="screens/devices3d.png" alt="3D hardware components"><figcaption>Hardware components of the system.</figcaption></figure>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-how">
+    <h2 id="h-how">How the prototype works</h2>
+    <ol class="steps">
+      <li><h3>Collect</h3><p>Queue count per door, load per car of the approaching train, and historical alighting by station, day and hour.</p></li>
+      <li><h3>Predict</h3><p>Forecast how many people leave each car, then the room each door will have: capacity − load + alighting.</p></li>
+      <li><h3>Recommend</h3><p>Ratio = people queuing or walking to a door ÷ predicted room. Under 0.7 green, under 1.0 amber, else red.</p></li>
+      <li><h3>Update lights</h3><p>Tunnel signs and door lights refresh every 2 seconds. A door with an over-full queue area is red regardless.</p></li>
+      <li><h3>Evaluate</h3><p>Score evenness, left behind and wait. Feed each train's real alighting back to correct the forecast.</p></li>
+    </ol>
+    <div class="cols">
+      <div><h3>Where the AI does real work</h3><ul>
+        <li><b>Forecasting:</b> starts from the historical average and learns a correction per car from every train, so it adapts to today's pattern.</li>
+        <li><b>Decision:</b> lights follow predicted room, not just the current queue. A busy-looking door stays green if many people are about to get off there.</li>
+        <li><b>Anti-herding:</b> followers are spread across green doors in proportion to spare room, so a green door never becomes the next hotspot.</li>
+      </ul></div>
+      <div><h3>Honest limits of this prototype</h3><ul>
+        <li>All data is simulated. A pilot would use CCTV people counting, car load sensors and gate data from MTR.</li>
+        <li>Passengers without guidance are modelled as queuing near their tunnel. Real behaviour should be measured in a pilot.</li>
+        <li>The forecast learns per train within a session. The production design stores data and averages each day-and-hour slot over recent weeks.</li>
+        <li>The lights advise passengers and staff. They do not replace staff, platform screen doors or safety systems.</li>
+      </ul></div>
+    </div>
+    <p class="note">Built with plain HTML and JavaScript (2D) and Three.js (3D). No server needed. Results reproduce with <code>python3 proof/run_benchmark.py</code>, which runs the exact model from the simulator and writes <code>results.csv</code> and <code>summary.csv</code>.</p>
+  </section>
+</div>
+
+<script>
+// Averages over 5 seeds from proof/summary.csv
+const COMP=[0,20,40,60,80,100];
+const D={
+  mon9:{cv:[1.136,.554,.361,.300,.277,.276],left:[7595,596.4,68,22.2,9.8,7.4],cvB:1.117,leftB:7308.8},
+  fri:{cv:[1.231,.629,.377,.293,.262,.259],left:[11474.8,991.6,111.4,22.2,6.2,3.8],cvB:1.228,leftB:10978.4}
+};
+const ROWS=[
+  ['Mon 09:00 rush',[1.117,.300],[189,41],[7309,22],[131,71],[5.6,3.8]],
+  ['Fri 18:30 rush',[1.228,.293],[249,38],[10978,22],[168,72],[5.9,4.2]],
+  ['Wed 14:00 off-peak',[.576,.406],[21,17],[0,0],[70.1,71.5],[2.1,1.5]],
+  ['Sat 16:00 weekend',[.565,.361],[30,24],[0,0],[70.0,71.2],[4.5,3.2]]];
+const pct=(a,b)=>{if(!a)return '';const p=Math.abs((b-a)/a*100);return `<small>${b<a?'−':'+'}${p.toFixed(p>99?1:0)}%</small>`};
+const fmt=(v,d)=>v.toLocaleString(undefined,{maximumFractionDigits:d,minimumFractionDigits:d});
+document.getElementById('tb').innerHTML=ROWS.map(([n,...c])=>`<tr><td>${n}</td>${c.map(([a,b],i)=>{const d=[2,0,0,i===3&&a<100?1:0,1][i];
+  return `<td>${fmt(a,d)} → <em>${fmt(b,d)}</em>${pct(a,b)}</td>`}).join('')}</tr>`).join('');
+
+function chart(id,key,base,ymax,ticks,fmtT,log){
+  const svg=document.getElementById(id),W=460,H=250,L=48,R=12,T=12,B=34;
+  const x=c=>L+(W-L-R)*c/100;
+  const y=log?v=>T+(H-T-B)*(1-Math.log10(Math.max(1,v))/Math.log10(ymax)):v=>T+(H-T-B)*(1-v/ymax);
+  let s='';
+  for(const t of ticks){s+=`<line x1="${L}" x2="${W-R}" y1="${y(t)}" y2="${y(t)}" stroke="var(--line)"/><text x="${L-6}" y="${y(t)+4}" text-anchor="end">${fmtT(t)}</text>`}
+  for(const c of COMP)s+=`<text x="${x(c)}" y="${H-14}" text-anchor="middle">${c}%</text>`;
+  s+=`<text x="${(L+W-R)/2}" y="${H-1}" text-anchor="middle">share of passengers following the lights</text>`;
+  const line=(vals,col)=>{const p=vals.map((v,i)=>`${x(COMP[i])},${y(v)}`).join(' ');
+    return `<polyline points="${p}" fill="none" stroke="${col}" stroke-width="2.5" stroke-linejoin="round"/>`+vals.map((v,i)=>`<circle cx="${x(COMP[i])}" cy="${y(v)}" r="3.2" fill="${col}"/>`).join('')};
+  for(const [k,col] of [['mon9','var(--accent)'],['fri','var(--go)']]){
+    s+=`<line x1="${L}" x2="${W-R}" y1="${y(D[k][base])}" y2="${y(D[k][base])}" stroke="var(--base)" stroke-width="1.5" stroke-dasharray="5 4"/>`;
+    s+=line(D[k][key],col)}
+  svg.innerHTML=s;
+}
+chart('chA','cv','cvB',1.4,[0,.4,.8,1.2],t=>t.toFixed(1));
+chart('chB','left','leftB',20000,[1,10,100,1000,10000],t=>t>=1000?(t/1000)+'k':t,true);
+</script>

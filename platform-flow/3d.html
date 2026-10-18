@@ -1,0 +1,343 @@
+<meta charset="utf-8">
+<title>Admiralty Platform 3D</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one big 3D stage with a slim control strip above and a comparison strip below. */
+:root{
+  --bg:#eef2f1; --panel:#ffffff; --ink:#13201d; --muted:#5a6b66; --line:#d3dcd9;
+  --accent:#1f4fa8; --accent-soft:#e2e9f7; --go:#18904f; --stop:#cf3328;
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1514; --panel:#172120; --ink:#e4ecea; --muted:#93a39f; --line:#2a3735;
+  --accent:#7ea2ee; --accent-soft:#1f2d45; --go:#3cc77a; --stop:#ff5f52; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1514; --panel:#172120; --ink:#e4ecea; --muted:#93a39f; --line:#2a3735;
+  --accent:#7ea2ee; --accent-soft:#1f2d45; --go:#3cc77a; --stop:#ff5f52; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5}
+.wrap{max-width:1280px;margin:0 auto;padding-block:22px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:14px}
+h1{font-family:var(--f-display);font-weight:700;text-transform:uppercase;font-size:clamp(1.9rem,4vw,2.8rem);line-height:1;margin:0}
+.eyebrow,.lbl{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.lead{max-width:72ch;color:var(--muted);margin:0}
+.bar{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center}
+.seg{display:inline-flex}
+button{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);padding:7px 12px;cursor:pointer;border-radius:4px}
+.seg button{border-radius:0;margin-left:-1px}
+.seg button:first-child{border-radius:4px 0 0 4px;margin-left:0}
+.seg button:last-child{border-radius:0 4px 4px 0}
+.seg button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);position:relative;font-weight:600}
+button:hover{border-color:var(--accent)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.clock{margin-left:auto;font-family:var(--f-mono);font-variant-numeric:tabular-nums;text-align:right;line-height:1.2}
+.clock b{font-size:1.25rem;font-weight:500;display:block}
+.stage{position:relative;height:min(72vh,680px);min-height:380px;border-radius:6px;overflow:hidden;border:1px solid var(--line);background:#0b1110}
+.stage canvas{display:block;width:100%;height:100%}
+.hud{position:absolute;left:12px;top:12px;display:grid;gap:4px;background:rgba(10,16,15,.72);color:#e4ecea;padding:10px 12px;border-radius:5px;font-family:var(--f-mono);font-size:.78rem;pointer-events:none;max-width:calc(100% - 24px)}
+.hud b{font-family:var(--f-display);font-size:1.15rem;font-weight:600;letter-spacing:.02em}
+.hint{position:absolute;right:12px;bottom:10px;color:#93a39f;font-family:var(--f-mono);font-size:.7rem;pointer-events:none}
+.cmp{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.cmp div{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px 14px;display:grid;gap:2px;font-variant-numeric:tabular-nums}
+.cmp span:last-child{font-family:var(--f-display);font-size:1.35rem;font-weight:600}
+.cmp em{font-style:normal;color:var(--accent)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.82rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:10px;height:10px;border-radius:50%;display:inline-block}
+@media (max-width:760px){.cmp{grid-template-columns:repeat(2,minmax(0,1fr))}.clock{margin-left:0;text-align:left}}
+</style>
+
+<div class="wrap">
+  <span class="eyebrow">Hackathon prototype · 3D view of the AI passenger distribution system</span>
+  <h1>Admiralty Platform 3D</h1>
+  <p class="lead">Passengers come out of two tunnels and queue at eight platform doors. Switch the AI lights on and off to see the same crowd spread out or bunch up. The tunnel signs and the lights above each door show which doors have room on the next train. Purple figures are people getting off. The AI forecasts how many will leave each door (the purple ↓ numbers), because every person who gets off frees a space for someone waiting.</p>
+
+  <div class="bar">
+    <div class="seg" id="mode" role="group" aria-label="Guidance">
+      <button type="button" data-m="1" aria-pressed="true">AI lights on</button>
+      <button type="button" data-m="0" aria-pressed="false">No guidance</button>
+    </div>
+    <div class="seg" id="cam" role="group" aria-label="Camera">
+      <button type="button" data-c="overview" aria-pressed="true">Overview</button>
+      <button type="button" data-c="tunnel" aria-pressed="false">Tunnel A</button>
+      <button type="button" data-c="platform" aria-pressed="false">Platform edge</button>
+    </div>
+    <div class="seg" id="speed" role="group" aria-label="Speed">
+      <button type="button" data-s="1" aria-pressed="false">1×</button>
+      <button type="button" data-s="4" aria-pressed="true">4×</button>
+      <button type="button" data-s="12" aria-pressed="false">12×</button>
+    </div>
+    <button type="button" id="play">Pause</button>
+    <div class="clock"><span class="lbl">Mon 09:00 rush · simulated</span><b id="clock">09:00:00</b></div>
+  </div>
+
+  <div class="stage" id="stage">
+    <div class="hud" id="hud"></div>
+    <div class="hint">Drag to orbit · scroll to zoom</div>
+  </div>
+
+  <div class="legend">
+    <span><i class="sw" style="background:#2fd27a"></i>Green: room predicted</span>
+    <span><i class="sw" style="background:#f2bd2c"></i>Amber: limited room</span>
+    <span><i class="sw" style="background:#ff5a4e"></i>Red: full or predicted full</span>
+    <span><i class="sw" style="background:#7ea2ee"></i>Walking from a tunnel</span>
+    <span><i class="sw" style="background:#d9e2df"></i>Queuing at a door</span>
+    <span><i class="sw" style="background:#c58cff"></i>Getting off the train</span>
+    <span><b style="color:#c58cff">↓52</b> AI forecast of people getting off at that door</span>
+  </div>
+
+  <div class="cmp" id="cmp"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(()=>{
+// ---------- Simulation model (same as the 2D simulator) ----------
+const N=8, CAP=230, ZONE_MAX=70, DT=0.25, HEADWAY=120, DWELL=20, LIGHT_EVERY=2, SAMPLE_EVERY=2;
+const ENTR=[{x:2.0,share:0.55,name:'Tunnel A'},{x:5.5,share:0.45,name:'Tunnel B'}];
+const LABELS=[...Array(N)].map((_,i)=>(i+1)+'A');
+const TODAY=[1,1.05,.85,1,1.3,1,.8,1.1];
+function rng(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function gauss(r){let u=0;while(!u)u=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*r())}
+function poisson(r,l){if(l>30)return Math.max(0,Math.round(l+Math.sqrt(l)*gauss(r)));const L=Math.exp(-l);let k=0,p=1;do{k++;p*=r()}while(p>L);return k-1}
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const peaks=h=>({am:Math.exp(-((h-8.75)**2)/1.0),pm:Math.exp(-((h-18.5)**2)/1.6)});
+function histAlight(h){const {am,pm}=peaks(h),level=14+40*am+32*pm,pa=[.55,.8,1.25,1.05,1.45,1.3,.85,.6],pp=[.75,.9,1.1,1.2,1.15,1.1,1,.8],mix=am/(am+pm+1e-6);
+  return pa.map((v,i)=>{let m=level*(mix*v+(1-mix)*pp[i]);if(i===4&&am>.3)m*=1.15;return m})}
+function loadProfile(h){const {am,pm}=peaks(h),lf=.45+.47*am+.4*pm;return [.86,.95,1.04,1.1,1.1,1.04,.98,.9].map(v=>Math.min(1.05,lf*v)*CAP)}
+
+class Sim{
+  constructor(guided){this.guided=guided;this.r=rng(7);this.queue=[...Array(N)].map(()=>[]);this.walking=[];this.walkTo=Array(N).fill(0);
+    this.lights=Array(N).fill('g');this.slack=Array(N).fill(50);this.cvSum=0;this.maxSum=0;this.samples=0;this.left=0;this.boarded=0;this.waitSum=0}
+  add(e,t,comp){const E=ENTR[e],r=this.r,follow=this.guided&&r()<comp,w=[];
+    for(let i=0;i<N;i++){const d=Math.abs(i+.5-E.x);
+      if(follow){const lw=this.lights[i]==='g'?1:this.lights[i]==='y'?.25:.03;w.push(lw*Math.exp(-d/4)*Math.max(4,this.slack[i]+25))}else w.push(Math.exp(-d/1.0))}
+    let s=w.reduce((a,b)=>a+b,0)*r(),z=0;while(z<N-1&&(s-=w[z])>0)z++;
+    this.walking.push({z,e,x0:E.x+(r()-.5)*.5,t0:t,dur:7+Math.abs(z+.5-E.x)*2.2+r()*3,ta:t,j:r()});this.walkTo[z]++}
+  update(t){const still=[];for(const p of this.walking){if(t-p.t0>=p.dur){this.queue[p.z].push(p.ta);this.walkTo[p.z]--}else still.push(p)}this.walking=still}
+  decide(sensor,predA){for(let i=0;i<N;i++){const space=Math.max(0,CAP-sensor[i]+predA[i]),exp=this.queue[i].length+this.walkTo[i],ratio=exp/Math.max(1,space);
+    this.slack[i]=space-exp;this.lights[i]=(this.queue[i].length>=ZONE_MAX*.9||ratio>=1)?'r':ratio>=.7?'y':'g'}}
+  board(tr,t){for(let i=0;i<N;i++){const room=Math.max(0,CAP-tr.load[i]+tr.alight[i]),got=this.queue[i].splice(0,Math.min(room,this.queue[i].length));
+    for(const ta of got)this.waitSum+=t-ta;this.boarded+=got.length;this.left+=this.queue[i].length}}
+  sample(){const c=this.queue.map(q=>q.length),m=c.reduce((a,b)=>a+b,0)/N,sd=Math.sqrt(c.reduce((a,b)=>a+(b-m)**2,0)/N);
+    this.cvSum+=m>1?sd/m:0;this.maxSum+=Math.max(...c);this.samples++}
+}
+class World{
+  constructor(){this.hour0=9;this.rate=240;this.comp=.6;this.t=0;this.er=rng(42);this.corr=Array(N).fill(1);
+    this.sims=[new Sim(false),new Sim(true)];this.countdown=HEADWAY*.4;this.next=this.makeTrain(this.countdown);this.shown=null;this.shownT=0;this.lightT=LIGHT_EVERY;this.sampleT=0}
+  makeTrain(inSec){const er=this.er,h=this.hour0+(this.t+inSec)/3600,hist=histAlight(h);
+    const load=loadProfile(h).map(v=>Math.round(clamp(v*(1+.05*gauss(er)),20,CAP))),sensor=load.map(v=>v*(1+.04*gauss(er)));
+    const alight=hist.map((v,i)=>Math.max(0,Math.round(Math.min(load[i],v*TODAY[i]*(1+.12*gauss(er))))));return {load,sensor,alight,hist}}
+  predA(){return this.next.hist.map((v,i)=>v*this.corr[i])}
+  step(dt){this.t+=dt;const n=poisson(this.er,this.rate*dt/60);
+    for(let k=0;k<n;k++){const e=this.er()<ENTR[0].share?0:1;for(const s of this.sims)s.add(e,this.t,this.comp)}
+    for(const s of this.sims)s.update(this.t);
+    if((this.lightT+=dt)>=LIGHT_EVERY){this.lightT=0;const p=this.predA();for(const s of this.sims)s.decide(this.next.sensor,p)}
+    if(this.shown&&(this.shownT-=dt)<=0)this.shown=null;
+    if((this.countdown-=dt)<=0)this.arrive();
+    if((this.sampleT+=dt)>=SAMPLE_EVERY){this.sampleT=0;for(const s of this.sims)s.sample()}}
+  arrive(){const tr=this.next;for(const s of this.sims)s.board(tr,this.t);
+    for(let i=0;i<N;i++)this.corr[i]=clamp(this.corr[i]+.3*(tr.alight[i]/Math.max(1,tr.hist[i])-this.corr[i]),.4,2.2);
+    this.shown=tr;this.shownT=DWELL;this.countdown=HEADWAY;this.next=this.makeTrain(HEADWAY);this.lightT=LIGHT_EVERY}
+}
+
+// ---------- 3D scene ----------
+const ZW=4, X0=-16, zx=i=>X0+(i+.5)*ZW, ex=E=>X0+E.x*ZW;   // zone/entrance x in metres
+const PLAT_D=14, TUN_L=16;
+const COL={g:new THREE.Color('#2fd27a'),y:new THREE.Color('#f2bd2c'),r:new THREE.Color('#ff5a4e'),off:new THREE.Color('#3a4644'),
+  walker:new THREE.Color('#7ea2ee'),queue:new THREE.Color('#d9e2df'),over:new THREE.Color('#ff7b70'),exit:new THREE.Color('#c58cff')};
+
+const stage=document.getElementById('stage');
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+stage.prepend(renderer.domElement);
+const scene=new THREE.Scene();
+scene.background=new THREE.Color('#0b1110');
+scene.fog=new THREE.Fog('#0b1110',60,120);
+const camera=new THREE.PerspectiveCamera(45,1,.1,300);
+const controls=new THREE.OrbitControls(camera,renderer.domElement);
+controls.enableDamping=true; controls.maxPolarAngle=Math.PI*.49; controls.minDistance=6; controls.maxDistance=90;
+
+function resize(){const w=stage.clientWidth,h=stage.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
+new ResizeObserver(resize).observe(stage); resize();
+
+scene.add(new THREE.HemisphereLight('#dfe9ff','#1a2220',.75));
+const sun=new THREE.DirectionalLight('#ffffff',.6); sun.position.set(10,30,20); scene.add(sun);
+
+const mat=(c,o={})=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:.85,metalness:.05},o));
+const box=(w,h,d,m,x,y,z)=>{const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);b.position.set(x,y,z);scene.add(b);return b};
+
+// platform, track, walls
+box(38,.4,PLAT_D,mat('#8d9894'),0,-.2,PLAT_D/2);
+box(38,.02,.35,mat('#e2c23a'),0,.01,.5);                            // tactile edge strip
+box(44,.3,6,mat('#262c2b'),0,-1.35,-3);                              // trackbed
+for(const z of[-1.9,-4.1])box(44,.12,.12,mat('#9aa3a1',{metalness:.6,roughness:.4}),0,-1.14,z);
+// back wall with tunnel openings
+const wallM=mat('#5f6b68');
+const gaps=ENTR.map(ex).sort((a,b)=>a-b); let wx=-19;
+for(const g of gaps){const w=(g-2.2)-wx; if(w>0)box(w,4,.4,wallM,wx+w/2,2,PLAT_D+.2); wx=g+2.2}
+box(19-wx,4,.4,wallM,wx+(19-wx)/2,2,PLAT_D+.2);
+for(const g of gaps)box(4.4,1,.4,wallM,g,3.5,PLAT_D+.2);
+// pillars
+for(let i=1;i<N;i++)box(.5,4,.5,mat('#6c7875'),X0+i*ZW,2,9.5);
+// tunnels
+for(const E of ENTR){const x=ex(E);
+  box(4.4,.2,TUN_L,mat('#7d8784'),x,-.1,PLAT_D+TUN_L/2);
+  box(.3,3,TUN_L,wallM,x-2.2,1.5,PLAT_D+TUN_L/2); box(.3,3,TUN_L,wallM,x+2.2,1.5,PLAT_D+TUN_L/2);
+  const roof=box(4.7,.2,TUN_L,mat('#4a5553',{transparent:true,opacity:.35}),x,3.1,PLAT_D+TUN_L/2); roof.renderOrder=2;
+}
+
+// text sprites
+function label(text,size=.9,color='#e4ecea'){const c=document.createElement('canvas');c.width=256;c.height=128;const g=c.getContext('2d');
+  g.font='600 72px "Barlow Condensed",Arial Narrow,sans-serif';g.fillStyle=color;g.textAlign='center';g.textBaseline='middle';g.fillText(text,128,64);
+  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),transparent:true,depthWrite:false}));s.scale.set(size*2,size,1);scene.add(s);return s}
+
+// platform screen doors + door lights + floor guidance
+const glassM=mat('#9fc3d6',{transparent:true,opacity:.22,roughness:.1,metalness:.2});
+box(38,.3,.25,mat('#3b4644'),0,2.55,.15);
+const doorLights=[], floorGlow=[], doorLightsGlow=[], forecastLabels=[];
+for(let i=0;i<N;i++){const x=zx(i);
+  const pw=(ZW-1.8)/2; box(pw,2.4,.08,glassM,x-ZW/2+pw/2,1.2,.15); box(pw,2.4,.08,glassM,x+ZW/2-pw/2,1.2,.15);
+  const L=box(1.4,.35,.3,new THREE.MeshBasicMaterial({color:COL.g}),x,3.0,.15); doorLights.push(L);
+  const halo=new THREE.PointLight('#2fd27a',.0,6,2); halo.position.set(x,2.6,1.2); scene.add(halo); doorLightsGlow.push(halo);
+  const f=new THREE.Mesh(new THREE.PlaneGeometry(ZW-.8,6),new THREE.MeshBasicMaterial({color:COL.g,transparent:true,opacity:.16,depthWrite:false}));
+  f.rotation.x=-Math.PI/2; f.position.set(x,.02,3.6); scene.add(f); floorGlow.push(f);
+  const lb=label(LABELS[i],.8); lb.position.set(x,3.65,.15);
+  const fc=label('',1,'#c58cff'); fc.position.set(x,4.6,.15); fc.material.depthTest=false; fc.renderOrder=10; forecastLabels.push(fc);
+}
+function setLabel(s,text){const c=s.material.map.image,g=c.getContext('2d');g.clearRect(0,0,c.width,c.height);
+  g.font='600 72px "Barlow Condensed",Arial Narrow,sans-serif';g.fillStyle='#c58cff';g.textAlign='center';g.textBaseline='middle';g.fillText(text,128,64);s.material.map.needsUpdate=true}
+// tunnel signs: 8 lights per sign, one at each tunnel mouth and one deeper inside
+const signDots=[];
+for(const E of ENTR)for(const z of[PLAT_D+1.2,PLAT_D+9]){const x=ex(E);
+  box(4,.9,.12,mat('#151b1a'),x,2.45,z);
+  const row=[];for(let i=0;i<N;i++){const d=new THREE.Mesh(new THREE.CircleGeometry(.17,16),new THREE.MeshBasicMaterial({color:COL.g}));
+    d.position.set(x-1.58+i*.45,2.5,z+.07);scene.add(d);row.push(d)}
+  signDots.push(row);
+  const t=label(E.name,.6,'#93a39f'); t.position.set(x,3.35,z);
+}
+
+// train: 8 cars
+const train=new THREE.Group(); scene.add(train);
+const carM=mat('#c9d2d0',{metalness:.4,roughness:.45}), winM=mat('#1d2b33',{roughness:.2,metalness:.3}), stripeM=mat('#2c5aa0');
+const loadBars=[];
+for(let i=0;i<N;i++){const g=new THREE.Group(),x=zx(i);
+  const body=new THREE.Mesh(new THREE.BoxGeometry(ZW-.25,3,3.1),carM); body.position.y=.55; g.add(body);
+  const win=new THREE.Mesh(new THREE.BoxGeometry(ZW-.6,.8,3.14),winM); win.position.y=1.15; g.add(win);
+  const st=new THREE.Mesh(new THREE.BoxGeometry(ZW-.25,.18,3.14),stripeM); st.position.y=.35; g.add(st);
+  const lbm=new THREE.MeshBasicMaterial({color:COL.g}); const lb=new THREE.Mesh(new THREE.BoxGeometry(ZW-.6,.12,1),lbm); lb.position.set(0,2.12,0); g.add(lb); loadBars.push(lb);
+  g.position.set(x,0,-3); train.add(g)}
+train.position.x=-120;
+
+// passengers: instanced bodies + heads
+const MAXP=2600;
+const bodyGeo=new THREE.CylinderGeometry(.17,.2,1.05,8); bodyGeo.translate(0,.53,0);
+const headGeo=new THREE.SphereGeometry(.14,10,8); headGeo.translate(0,1.22,0);
+const bodies=new THREE.InstancedMesh(bodyGeo,mat('#ffffff',{roughness:.7}),MAXP), heads=new THREE.InstancedMesh(headGeo,mat('#ffffff',{roughness:.6}),MAXP);
+const M=new THREE.Matrix4(), tmpC=new THREE.Color();
+// Create the per-instance colour buffer before the first render so the shader is compiled with it
+for(const m of[bodies,heads]){m.instanceMatrix.setUsage(THREE.DynamicDrawUsage);for(let k=0;k<MAXP;k++)m.setColorAt(k,COL.queue);
+  m.instanceColor.setUsage(THREE.DynamicDrawUsage);m.frustumCulled=false;m.count=0;scene.add(m)}
+function put(k,x,z,col){M.makeTranslation(x,0,z);bodies.setMatrixAt(k,M);heads.setMatrixAt(k,M);bodies.setColorAt(k,col);tmpC.copy(col).multiplyScalar(.85);heads.setColorAt(k,tmpC)}
+
+// Queues form on both sides of each door, leaving the middle lane clear for people getting off
+const COLS=6, SP=.55, QOFF=[-1.75,-1.2,-.65,.65,1.2,1.75];
+const qSpot=(i,k)=>[zx(i)+QOFF[k%COLS], Math.min(PLAT_D-.6,1.0+Math.floor(k/COLS)*SP)];
+// The tunnels run two-way: arrivals keep to one side, people leaving keep to the other
+const IN_LANE=-.8, OUT_LANE=1.2;
+let exiters=[], lastShown=null;
+
+// ---------- cameras ----------
+const VIEWS={overview:{p:[16,17,30],t:[0,0,7]},tunnel:{p:[ex(ENTR[0]),1.7,PLAT_D+TUN_L-1],t:[ex(ENTR[0]),1.6,0]},platform:{p:[-19,2.2,2.5],t:[4,1,4]}};
+function setView(k){const v=VIEWS[k];camera.position.set(...v.p);controls.target.set(...v.t);controls.update()}
+setView('overview');
+
+// ---------- UI ----------
+const $=id=>document.getElementById(id);
+let world=new World(), showAi=true, speed=4, playing=true;
+const seg=(id,fn)=>$(id).addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;for(const x of $(id).children)x.setAttribute('aria-pressed',x===b);fn(b.dataset)});
+seg('mode',d=>showAi=d.m==='1'); seg('cam',d=>setView(d.c)); seg('speed',d=>speed=+d.s);
+$('play').addEventListener('click',()=>{playing=!playing;$('play').textContent=playing?'Pause':'Play'});
+
+function trainX(){ // slide in over the last 7 s, stand for DWELL, slide out over 7 s
+  const ease=t=>t*t*(3-2*t);
+  if(world.shown){const out=DWELL-world.shownT;return out<DWELL-7?0:ease((out-(DWELL-7))/7)*90}
+  if(world.countdown<7)return -ease(world.countdown/7)*90;
+  return -120}
+
+function update3d(){
+  const s=world.sims[showAi?1:0];
+  // lights
+  for(let i=0;i<N;i++){const c=showAi?COL[s.lights[i]]:COL.off;
+    doorLights[i].material.color.copy(c); floorGlow[i].material.color.copy(c); floorGlow[i].material.opacity=showAi?.18:.05;
+    doorLightsGlow[i].color.copy(c); doorLightsGlow[i].intensity=showAi?1.2:0;}
+  for(const row of signDots)row.forEach((d,i)=>d.material.color.copy(showAi?COL[s.lights[i]]:COL.off));
+  // train
+  train.position.x=trainX(); train.visible=train.position.x>-110;
+  const tr=world.shown||world.next;
+  loadBars.forEach((b,i)=>{const f=tr.load[i]/CAP;b.material.color.copy(f>.95?COL.r:f>.8?COL.y:COL.g)});
+  // passengers
+  let k=0;
+  for(let i=0;i<N&&k<MAXP;i++){const q=s.queue[i].length,over=q>ZONE_MAX;
+    for(let j=0;j<q&&k<MAXP;j++){const [x,z]=qSpot(i,j);put(k++,x,z,over?COL.over:COL.queue)}}
+  // people getting off: spawn when a new train opens its doors (Data source 3 in action)
+  if(world.shown&&world.shown!==lastShown){
+    for(let i=0;i<N;i++)for(let j=0,n=world.shown.alight[i];j<n;j++){
+      const e=Math.abs(zx(i)-ex(ENTR[0]))<Math.abs(zx(i)-ex(ENTR[1]))?0:1, r=Math.random();
+      exiters.push({x:zx(i)+(Math.random()-.5)*.7,e,t0:world.t+j/n*9+Math.random()*.4,dur:16+Math.abs(zx(i)-ex(ENTR[e]))*.5+r*4,j:Math.random()})}
+  }
+  lastShown=world.shown;
+  exiters=exiters.filter(p=>world.t-p.t0<p.dur);
+  for(const p of exiters){if(k>=MAXP)break; const u=(world.t-p.t0)/p.dur; if(u<0)continue;
+    const tx=ex(ENTR[p.e])+OUT_LANE+(p.j-.5)*.6, endZ=PLAT_D+TUN_L-.5; let x,z;
+    if(u<.12){x=p.x;z=-1.3+(1.6+1.3)*(u/.12)}
+    else if(u<.6){const v=(u-.12)/.48;x=p.x+(tx-p.x)*v;z=1.6+(PLAT_D-.5-1.6)*v}
+    else{const v=(u-.6)/.4;x=tx;z=(PLAT_D-.5)+(endZ-(PLAT_D-.5))*v}
+    put(k++,x,z,COL.exit)}
+  for(const p of s.walking){if(k>=MAXP)break;
+    const E=ENTR[p.e],k01=Math.min(1,(world.t-p.t0)/p.dur),sx=X0+p.x0*ZW+IN_LANE,startZ=PLAT_D+TUN_L-1;
+    let x,z; const tgt=qSpot(p.z,s.queue[p.z].length+Math.floor(p.j*4));
+    if(k01<.45){const u=k01/.45;x=sx;z=startZ+(PLAT_D-.5-startZ)*u}
+    else{const u=(k01-.45)/.55;x=sx+(tgt[0]-sx)*u;z=(PLAT_D-.5)+(tgt[1]+.6-(PLAT_D-.5))*u}
+    put(k++,x,z,COL.walker)}
+  bodies.count=heads.count=k;
+  bodies.instanceMatrix.needsUpdate=heads.instanceMatrix.needsUpdate=true;
+  if(bodies.instanceColor)bodies.instanceColor.needsUpdate=true; if(heads.instanceColor)heads.instanceColor.needsUpdate=true;
+}
+
+function hud(){
+  const s=world.sims[showAi?1:0], q=s.queue.map(a=>a.length), c=Math.max(0,Math.ceil(world.countdown));
+  const red=s.lights.filter(l=>l==='r').length, pa=world.predA();
+  // forecast for the next train while waiting; actual count while a train is boarding
+  forecastLabels.forEach((l,i)=>setLabel(l,'↓'+Math.round(world.shown?world.shown.alight[i]:pa[i])));
+  const off=exiters.filter(p=>world.t>=p.t0).length;
+  $('hud').innerHTML=`<b>${showAi?'AI lights on':'No guidance'}</b>
+    <span>${world.shown?'Train boarding':`Next train in ${Math.floor(c/60)}:${String(c%60).padStart(2,'0')}`}</span>
+    <span>Queuing ${q.reduce((a,b)=>a+b,0)} · walking ${s.walking.length} · getting off ${off}</span>
+    <span style="color:#c58cff">${world.shown?`Got off this train: ${world.shown.alight.reduce((a,b)=>a+b,0)}`:`AI forecast getting off: ${Math.round(pa.reduce((a,b)=>a+b,0))}`}</span>
+    <span>Busiest door ${LABELS[q.indexOf(Math.max(...q))]} (${Math.max(...q)})</span>
+    ${showAi?`<span>Red doors ${red} of ${N}</span>`:''}`;
+  const [a,b]=world.sims, avg=(x,k)=>x.samples?(x[k]/x.samples):0, w=x=>x.boarded?x.waitSum/x.boarded:0;
+  const cell=(t,x,y)=>`<div><span class="lbl">${t}</span><span>${x} → <em>${y}</em></span></div>`;
+  $('cmp').innerHTML=cell('Queue imbalance',avg(a,'cvSum').toFixed(2),avg(b,'cvSum').toFixed(2))+
+    cell('Busiest door queue',avg(a,'maxSum').toFixed(0),avg(b,'maxSum').toFixed(0))+
+    cell('Left behind',a.left,b.left)+cell('Average wait',w(a).toFixed(0)+' s',w(b).toFixed(0)+' s');
+  const sec=Math.floor(world.hour0*3600+world.t);$('clock').textContent=[sec/3600%24,sec/60%60,sec%60].map(v=>String(Math.floor(v)).padStart(2,'0')).join(':');
+}
+
+let last=performance.now(), acc=0, uiT=1;
+function frame(now){
+  const dt=Math.min(.1,(now-last)/1000); last=now;
+  if(playing){acc+=dt*speed;while(acc>=DT){world.step(DT);acc-=DT}}
+  update3d(); controls.update(); renderer.render(scene,camera);
+  if((uiT+=dt)>.4){uiT=0;hud()}
+  requestAnimationFrame(frame);
+}
+// warm up so the platform opens mid-rush instead of empty
+for(let i=0;i<70/DT;i++)world.step(DT);
+requestAnimationFrame(frame);
+})();
+</script>

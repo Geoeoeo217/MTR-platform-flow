@@ -1,0 +1,1104 @@
+<meta charset="utf-8">
+<title>Model 3D Peron Pintar</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: one-screen app. Tab bar on top, 3D stage on the left, spec/control panel on the right (stacks on phones). The stage is always a dark "showroom". */
+:root{
+  --bg:#edf1f0; --surface:#ffffff; --sunk:#e3e9e8; --line:#cfd8d6; --fg:#14201e; --muted:#566664;
+  --accent:#0d7a70; --accent-ink:#ffffff;
+  --go:#1fae5b; --mid:#e3a90c; --stop:#d8393b; --off:#7d8b8a;
+  --stage:#0f1a1c; --stage-fg:#e6f0ee; --stage-chip:rgba(9,15,16,.84); --stage-line:rgba(255,255,255,.14); --stage-accent:#3cc2b5;
+  --display:"Barlow Condensed","Arial Narrow",sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0b1112; --surface:#131b1c; --sunk:#0f1617; --line:#24302f; --fg:#e2ebe9; --muted:#8fa09d;
+    --accent:#3cc2b5; --accent-ink:#04201c; --off:#5d6b6a; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0b1112; --surface:#131b1c; --sunk:#0f1617; --line:#24302f; --fg:#e2ebe9; --muted:#8fa09d;
+  --accent:#3cc2b5; --accent-ink:#04201c; --off:#5d6b6a; color-scheme:dark;
+}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 var(--body)}
+.app{height:100%;display:flex;flex-direction:column}
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 24px;
+  padding-block:14px 12px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.mark{width:34px;height:34px;border-radius:8px;background:var(--stage);display:grid;grid-template-columns:repeat(3,1fr);gap:3px;padding:7px;box-sizing:border-box;flex:none}
+.mark i{border-radius:2px}
+.mark i:nth-child(1){background:var(--go)}.mark i:nth-child(2){background:var(--mid)}.mark i:nth-child(3){background:var(--stop)}
+h1{font:600 26px/1 var(--display);letter-spacing:.01em;margin:0;text-wrap:balance}
+.sub{margin:3px 0 0;color:var(--muted);font-size:12.5px}
+.tabs{display:flex;gap:4px;background:var(--sunk);padding:4px;border-radius:10px;border:1px solid var(--line)}
+.tab{font:600 16px/1 var(--display);letter-spacing:.02em;border:0;background:transparent;color:var(--muted);padding:9px 14px;border-radius:7px;cursor:pointer}
+.tab:hover{color:var(--fg)}
+.tab[aria-selected="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.tab .n{font-family:var(--mono);font-size:12px;color:var(--accent);margin-right:6px}
+button:focus-visible,input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+
+.main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 370px;gap:16px;
+  padding-block:0 16px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.stage{position:relative;min-height:0;border-radius:14px;overflow:hidden;background:var(--stage)}
+#c{display:block;width:100%;height:100%;touch-action:none}
+#labels{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.lbl{position:absolute;left:0;top:0;display:flex;align-items:center;gap:6px;white-space:nowrap;
+  font:500 12px/1 var(--body);color:var(--stage-fg);background:var(--stage-chip);border:1px solid var(--stage-line);
+  padding:5px 9px 5px 7px;border-radius:999px;pointer-events:auto;cursor:pointer;will-change:transform}
+.lbl.dev::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--stage-accent);box-shadow:0 0 0 3px rgba(60,194,181,.25)}
+.lbl.dev:hover{border-color:var(--stage-accent)}
+.lbl.dev.on{background:var(--stage-accent);color:#04201c;border-color:var(--stage-accent)}
+.lbl.dev.on::before{background:#04201c;box-shadow:none}
+.lbl.info{pointer-events:none;cursor:default;font:500 11px/1 var(--mono);background:rgba(9,15,16,.62);padding:4px 7px}
+.lbl.info b{font-weight:500}
+.lbl.info .dot{width:8px;height:8px;border-radius:2px;display:inline-block}
+.hint{position:absolute;left:12px;bottom:12px;right:12px;pointer-events:none;color:rgba(230,240,238,.72);font:12px/1.4 var(--body)}
+.hint span{background:rgba(9,15,16,.6);padding:5px 9px;border-radius:6px;display:inline-block}
+
+.panel{min-height:0;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.sec{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.sec:last-child{border-bottom:0}
+.eyebrow{font:500 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h2{font:600 22px/1.1 var(--display);margin:0;letter-spacing:.01em}
+h3{font:600 24px/1.05 var(--display);margin:0;text-wrap:balance}
+p{margin:0}
+.muted{color:var(--muted)}
+.devlist{display:flex;flex-wrap:wrap;gap:6px}
+.devbtn{font:500 12.5px/1 var(--body);border:1px solid var(--line);background:var(--sunk);color:var(--fg);padding:7px 10px;border-radius:999px;cursor:pointer}
+.devbtn:hover{border-color:var(--accent)}
+.devbtn[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+dl{margin:0;display:grid;gap:10px}
+dt{font:500 11px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+dd{margin:0}
+.proto{background:var(--sunk);border-radius:8px;padding:10px 12px}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font:500 12px/1 var(--mono)}
+.flow span{border:1px solid var(--line);border-radius:6px;padding:6px 8px;background:var(--sunk)}
+.flow i{font-style:normal;color:var(--muted)}
+.legend{display:grid;gap:6px}
+.legend div{display:flex;gap:8px;align-items:baseline}
+.sw{width:10px;height:10px;border-radius:3px;flex:none;transform:translateY(1px)}
+.sw.go{background:var(--go)}.sw.mid{background:var(--mid)}.sw.stop{background:var(--stop)}.sw.off{background:var(--off)}
+
+.ctrls{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}
+.switch{display:inline-flex;align-items:center;gap:10px;cursor:pointer;font-weight:600}
+.switch input{position:absolute;opacity:0;width:1px;height:1px}
+.switch span{width:40px;height:22px;border-radius:999px;background:var(--off);position:relative;transition:background .2s;flex:none}
+.switch span::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s}
+.switch input:checked+span{background:var(--accent)}
+.switch input:checked+span::after{transform:translateX(18px)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{font:500 12px/1 var(--mono);border:0;background:var(--surface);color:var(--fg);padding:7px 10px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--fg);color:var(--surface)}
+.phase{display:flex;gap:8px;align-items:center;font-size:13px;background:var(--sunk);border-radius:8px;padding:8px 10px}
+.phase i{width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none;animation:pulse 1.4s infinite}
+@keyframes pulse{50%{opacity:.3}}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th{font:500 10.5px/1.2 var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);text-align:left;padding:0 6px 6px 0;vertical-align:bottom}
+td{padding:7px 6px 7px 0;border-top:1px solid var(--line);vertical-align:middle}
+td.num{font:500 14px/1 var(--mono)}
+td small{display:block;font:400 10.5px/1.2 var(--mono);color:var(--muted);margin-top:3px}
+.zname{display:flex;align-items:center;gap:7px;font-weight:600;white-space:nowrap}
+.chip{width:12px;height:12px;border-radius:3px;background:var(--off);flex:none}
+.state{font:600 12px/1 var(--body);white-space:nowrap}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.kpi{background:var(--sunk);border-radius:8px;padding:9px 11px;min-width:0}
+.kpi b{display:block;font:600 22px/1.1 var(--display);margin-top:4px}
+.kpi.wide{grid-column:1/-1}
+.cmp{display:flex;gap:16px;flex-wrap:wrap}
+.cmp div{font-size:12.5px}
+.cmp b{font:600 20px/1.1 var(--display);display:block}
+.views{display:flex;flex-wrap:wrap;gap:6px}
+.note{font-size:12px;color:var(--muted)}
+
+@media (max-width:860px){
+  .app{height:auto;min-height:100%}
+  .main{grid-template-columns:minmax(0,1fr)}
+  .stage{height:62vh;min-height:360px}
+  .panel{overflow:visible}
+}
+@media (prefers-reduced-motion:reduce){.phase i{animation:none}}
+</style>
+
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <div class="mark" aria-hidden="true"><i></i><i></i><i></i></div>
+      <div>
+        <h1>Model 3D Peron Pintar</h1>
+        <p class="sub">AI-Assisted Predictive Passenger Distribution · prototipe visual</p>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Tampilan">
+      <button class="tab" role="tab" id="tab-alat" aria-selected="true"><span class="n">1</span>Alat-alat</button>
+      <button class="tab" role="tab" id="tab-mtr" aria-selected="false"><span class="n">2</span>Penerapan di stasiun &amp; kereta</button>
+    </nav>
+  </header>
+
+  <main class="main">
+    <section class="stage" id="stage" aria-label="Tampilan 3D">
+      <canvas id="c"></canvas>
+      <div id="labels"></div>
+      <div class="hint"><span id="hint">Seret untuk memutar · scroll/pinch untuk zoom · klik label untuk detail</span></div>
+    </section>
+
+    <aside class="panel">
+      <!-- Panel 1: devices -->
+      <div id="panel-alat">
+        <div class="sec">
+          <span class="eyebrow">7 perangkat</span>
+          <h2>Perangkat sistem</h2>
+          <div class="devlist" id="devlist"></div>
+        </div>
+        <div class="sec" id="detail-alat"></div>
+        <div class="sec">
+          <span class="eyebrow">Alur data</span>
+          <div class="flow"><span>Sensor</span><i>→</i><span>Edge AI</span><i>→</i><span>Prediksi</span><i>→</i><span>Lampu</span><i>→</i><span>Evaluasi</span></div>
+          <div class="legend">
+            <div><span class="sw go"></span><span><b>Hijau</b> · diperkirakan masih ada ruang, direkomendasikan</span></div>
+            <div><span class="sw mid"></span><span><b>Kuning</b> · kapasitas terbatas</span></div>
+            <div><span class="sw stop"></span><span><b>Merah</b> · sudah padat atau diperkirakan padat</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel 2: station simulation -->
+      <div id="panel-mtr" hidden>
+        <div class="sec">
+          <span class="eyebrow">Simulasi · Senin pagi, jam sibuk</span>
+          <div class="ctrls">
+            <label class="switch"><input type="checkbox" id="ai" checked><span></span>Sistem AI aktif</label>
+            <div class="seg" role="group" aria-label="Kecepatan">
+              <button id="sp1" data-speed="1" aria-pressed="true">1×</button>
+              <button id="sp2" data-speed="2" aria-pressed="false">2×</button>
+              <button id="sp4" data-speed="4" aria-pressed="false">4×</button>
+            </div>
+          </div>
+          <div class="phase"><i></i><span id="phase">Menunggu kereta</span></div>
+        </div>
+        <div class="sec">
+          <span class="eyebrow">Zona antrean · kereta berikut</span>
+          <table>
+            <thead><tr><th>Zona</th><th>Antre</th><th>Ruang diprediksi<br>(kap − isi + turun)</th><th>Lampu</th></tr></thead>
+            <tbody id="zrows"></tbody>
+          </table>
+          <p class="note">Ruang diprediksi = kapasitas gerbong − isi dari sensor beban + perkiraan turun dari data historis (Senin 09.00). Lampu dihitung dari antrean dibanding ruang itu.</p>
+        </div>
+        <div class="sec">
+          <span class="eyebrow">Evaluasi distribusi</span>
+          <div class="kpis">
+            <div class="kpi"><span class="eyebrow">Ketimpangan antrean</span><b id="m-cv">–</b></div>
+            <div class="kpi"><span class="eyebrow">Tertinggal (kereta terakhir)</span><b id="m-left">–</b></div>
+            <div class="kpi wide"><span class="eyebrow">Rata-rata penumpang tertinggal per kereta</span>
+              <div class="cmp" style="margin-top:6px">
+                <div><b id="m-on">–</b>AI aktif</div>
+                <div><b id="m-off">–</b>tanpa AI</div>
+              </div>
+            </div>
+          </div>
+          <p class="note">Coba matikan AI beberapa kereta, lalu nyalakan lagi. Tanpa arahan, penumpang menumpuk di zona dekat koridor (Zona 3–4).</p>
+        </div>
+        <div class="sec">
+          <span class="eyebrow">Sudut kamera</span>
+          <div class="views">
+            <button class="devbtn" data-view="overview">Seluruh peron</button>
+            <button class="devbtn" data-view="corridor">Koridor &amp; panel arah</button>
+            <button class="devbtn" data-view="platform">Antrean peron</button>
+            <button class="devbtn" data-view="train">Pintu kereta</button>
+          </div>
+        </div>
+        <div class="sec" id="detail-mtr">
+          <span class="eyebrow">Perangkat</span>
+          <p class="muted">Klik label perangkat di model (titik hijau) untuk melihat fungsi dan posisinya di stasiun.</p>
+        </div>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(() => {
+const $ = s => document.querySelector(s);
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- device copy ---------- */
+const DEV = {
+  cctv:{name:'Kamera CCTV + AI', tag:'Hitung antrean',
+    role:'Menghitung jumlah orang di setiap zona antrean dengan model deteksi orang (mis. YOLO). Zona digambar sebagai area di gambar kamera.',
+    where:'Langit-langit peron, menghadap barisan antrean. Bisa memakai CCTV yang sudah terpasang.',
+    data:'Hanya angka: jumlah orang per zona setiap 1–2 detik. Video diproses di stasiun dan tidak disimpan.',
+    proto:'Webcam USB di atas maket + YOLOv8 di laptop.',
+    mtr:'Dipasang di rel kabel atas peron, menyorot zona 1–4 dari arah pintu kaca.'},
+  tof:{name:'Sensor 3D ToF overhead', tag:'Hitung antrean (padat)',
+    role:'Kamera kedalaman yang menghitung kepala dari atas. Tetap akurat saat sangat padat karena orang tidak saling menutupi.',
+    where:'Di atas tiap zona antrean, tinggi 3–4 m.',
+    data:'Jumlah dan posisi orang per zona. Tanpa wajah, jadi ramah privasi (PDPO).',
+    proto:'Opsional: sensor VL53L1X atau kamera depth murah.',
+    mtr:'Satu sensor di atas tiap zona sebagai pelengkap CCTV di titik paling padat.'},
+  apc:{name:'Penghitung pintu (APC)', tag:'Hitung yang turun',
+    role:'Sensor di atas pintu kereta yang menghitung arah gerak: berapa orang turun dan naik di setiap pintu.',
+    where:'Bagian atas tiap pintu kereta.',
+    data:'Jumlah turun/naik per pintu per stasiun. Disimpan sebagai data historis (stasiun, hari, jam).',
+    proto:'Sensor IR break-beam atau ToF di pintu maket.',
+    mtr:'Satu sensor di atas setiap pintu gerbong. Data ini yang membentuk pola “Senin 09.00 banyak turun di gerbong 2”.'},
+  load:{name:'Sensor beban suspensi', tag:'Isi gerbong',
+    role:'Membaca tekanan pegas udara di bogie. Berat gerbong ÷ rata-rata berat orang = perkiraan jumlah penumpang.',
+    where:'Bogie setiap gerbong. Kereta modern umumnya sudah memilikinya.',
+    data:'Isi tiap gerbong, dikirim ke stasiun berikut sebelum kereta tiba. Selisih berat sebelum dan sesudah pintu dibuka = jumlah yang turun.',
+    proto:'Load cell + modul HX711 di bawah maket gerbong.',
+    mtr:'Komponen oranye di bawah gerbong. Datanya membuat lampu berubah sebelum kereta masuk peron.'},
+  edge:{name:'Unit Edge AI', tag:'Otak sistem',
+    role:'Menjalankan deteksi orang, model prediksi kepadatan, dan aturan rekomendasi zona di stasiun, tanpa bergantung internet.',
+    where:'Kabinet teknik di ujung peron.',
+    data:'Mengirim warna lampu ke panel, dan ringkasan ke ruang kontrol staf.',
+    proto:'Raspberry Pi 5 atau laptop.',
+    mtr:'Kabinet di dinding belakang. Terhubung ke kamera, sensor kereta, dan semua lampu.'},
+  sign:{name:'Panel arah di koridor', tag:'Arahan awal',
+    role:'Menunjukkan zona yang direkomendasikan sebelum penumpang sampai di peron, lengkap dengan nomor zona dan panah.',
+    where:'Mulut koridor/terowongan dan ujung atas eskalator.',
+    data:'Warna, panah, dan label per zona. Tidak hanya warna, supaya terbaca oleh penumpang buta warna.',
+    proto:'Strip LED WS2812B + ESP32, atau layar kecil.',
+    mtr:'Digantung di mulut koridor. Penumpang yang datang dari koridor memilih zona dari sini.'},
+  strip:{name:'Strip LED lantai & indikator pintu', tag:'Arahan dekat pintu',
+    role:'Konfirmasi di dekat area naik: hijau, kuning, atau merah per zona, ditambah indikator di atas pintu kaca peron.',
+    where:'Sepanjang garis antrean di depan pintu kaca peron (PSD).',
+    data:'Warna per zona. Di dunia nyata diberi jeda minimum (mis. 30 detik) agar tidak berkedip-kedip.',
+    proto:'Strip LED WS2812B.',
+    mtr:'Garis cahaya di lantai depan tiap gerbong dan lampu kecil di atas pintu kaca.'}
+};
+const ORDER = ['cctv','tof','apc','load','edge','sign','strip'];
+
+/* ---------- renderer / camera ---------- */
+const stage = $('#stage'), canvas = $('#c'), labelLayer = $('#labels');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputEncoding = THREE.sRGBEncoding;
+const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 400);
+const controls = new THREE.OrbitControls(camera, canvas);
+controls.enableDamping = true;
+controls.maxPolarAngle = Math.PI * 0.48;
+controls.minDistance = 2.5;
+controls.maxDistance = 80;
+
+function resize(){
+  const w = stage.clientWidth, h = stage.clientHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / Math.max(h,1);
+  camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(stage);
+
+/* ---------- helpers ---------- */
+const mat = (c, o={}) => new THREE.MeshStandardMaterial(Object.assign({color:c, roughness:.6, metalness:.1}, o));
+const basic = (c, o={}) => new THREE.MeshBasicMaterial(Object.assign({color:c}, o));
+const B = (w,h,d) => new THREE.BoxGeometry(w,h,d);
+const C = (rt,rb,h,s=24,open=false) => new THREE.CylinderGeometry(rt,rb,h,s,1,open);
+const V3 = (x,y,z) => new THREE.Vector3(x,y,z);
+function mesh(geo, m, x=0, y=0, z=0, parent, shadow=true){
+  const o = new THREE.Mesh(geo, m); o.position.set(x,y,z);
+  o.castShadow = shadow; o.receiveShadow = true;
+  if(parent) parent.add(o);
+  return o;
+}
+const rand = (a,b) => a + Math.random()*(b-a);
+const ri = (a,b) => Math.floor(rand(a, b+1));
+const pick = a => a[Math.floor(Math.random()*a.length)];
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+function weighted(w){ const s = w.reduce((a,b)=>a+b,0); let r = Math.random()*s; for(let i=0;i<w.length;i++){ r -= w[i]; if(r<=0) return i; } return w.length-1; }
+
+const HEX = {go:0x1fae5b, mid:0xe3a90c, stop:0xd8393b, off:0x3b4547};
+const CSS = {go:'#1fae5b', mid:'#e3a90c', stop:'#d8393b', off:'#58646a'};
+const STATE_TXT = {go:'Longgar', mid:'Terbatas', stop:'Padat', off:'Mati'};
+
+function addLights(s, span, cx=0){
+  s.add(new THREE.HemisphereLight(0xe4f0ef, 0x1c2426, .7));
+  const d = new THREE.DirectionalLight(0xffffff, .95);
+  d.position.set(cx + span*.35, span*1.1, span*.8);
+  d.target.position.set(cx,0,0);
+  d.castShadow = true;
+  d.shadow.mapSize.set(2048,2048);
+  const sc = d.shadow.camera; sc.left=-span; sc.right=span; sc.top=span; sc.bottom=-span; sc.near=1; sc.far=span*4;
+  d.shadow.bias = -0.0006;
+  s.add(d, d.target);
+}
+
+/* people */
+const pBody = C(.17,.21,.95,10); pBody.translate(0,.5,0);
+const pHead = new THREE.SphereGeometry(.15,12,10); pHead.translate(0,1.15,0);
+const clothes = [0x2f5d8a,0x8a3b3b,0x3d6b4f,0x5f5288,0x9a7a3a,0x3f474b,0xaeb3b5,0x7a4a2a,0x1f3d5c].map(c=>mat(c,{roughness:.85}));
+const skins = [0xe0b89a,0xc99a72,0x8d5e3c,0xf0cfb4].map(c=>mat(c,{roughness:.7}));
+function makePerson(scale=1){
+  const g = new THREE.Group();
+  const b = new THREE.Mesh(pBody, pick(clothes)), h = new THREE.Mesh(pHead, pick(skins));
+  b.castShadow = h.castShadow = true;
+  g.add(b, h); g.scale.setScalar(scale);
+  return g;
+}
+
+/* sign texture */
+function makeSign(){
+  const cv = document.createElement('canvas'); cv.width = 1024; cv.height = 256;
+  const tex = new THREE.CanvasTexture(cv); tex.encoding = THREE.sRGBEncoding; tex.anisotropy = 4;
+  return {cv, ctx:cv.getContext('2d'), tex};
+}
+function rr(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+function drawSign(S, states, best, arrows){
+  const {ctx, cv} = S, W = cv.width, H = cv.height, cw = W/4;
+  ctx.fillStyle = '#0a0f10'; ctx.fillRect(0,0,W,H);
+  for(let i=0;i<4;i++){
+    const st = states[i], x = i*cw+10, y = 12, w = cw-20, h = H-24;
+    ctx.fillStyle = CSS[st]; rr(ctx,x,y,w,h,18); ctx.fill();
+    const ink = (st==='go'||st==='mid') ? '#08130f' : '#ffffff';
+    ctx.fillStyle = ink;
+    ctx.font = '700 128px "Barlow Condensed","Arial Narrow",sans-serif';
+    ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
+    ctx.fillText(String(i+1), x+22, y+132);
+    ctx.font = '700 96px "Barlow Condensed","Arial Narrow",sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(arrows[i], x+w-18, y+124);
+    ctx.textAlign = 'left';
+    ctx.font = '700 30px "IBM Plex Sans",Arial,sans-serif';
+    const t = st==='off' ? 'ZONA '+(i+1) : (i===best ? '★ DISARANKAN' : STATE_TXT[st].toUpperCase());
+    ctx.fillText(t, x+22, y+h-26);
+  }
+  S.tex.needsUpdate = true;
+}
+
+/* ---------- labels ---------- */
+const labels = [];
+let showLabels = true, current = 'alat', selected = null;
+function addLabel(sc, obj, html, opts={}){
+  const el = document.createElement(opts.key ? 'button' : 'div');
+  el.className = 'lbl ' + (opts.key ? 'dev' : 'info');
+  el.innerHTML = html;
+  if(opts.key){ el.type='button'; el.addEventListener('click', () => select(opts.key, true)); }
+  labelLayer.appendChild(el);
+  const L = {el, obj, off: V3(...(opts.off||[0,0,0])), sc, key:opts.key};
+  labels.push(L); return L;
+}
+const tmpV = new THREE.Vector3();
+function updateLabels(){
+  const w = stage.clientWidth, h = stage.clientHeight;
+  for(const L of labels){
+    let show = L.sc === current && showLabels;
+    if(show){ let o = L.obj; while(o){ if(!o.visible){ show=false; break; } o = o.parent; } }
+    if(show){
+      L.obj.getWorldPosition(tmpV); tmpV.add(L.off); tmpV.project(camera);
+      if(tmpV.z > 1 || Math.abs(tmpV.x) > 1.2 || Math.abs(tmpV.y) > 1.2) show = false;
+      else L.el.style.transform = `translate(${(tmpV.x*.5+.5)*w}px,${(-tmpV.y*.5+.5)*h}px) translate(-50%,-100%)`;
+    }
+    L.el.hidden = !show;
+    if(L.key) L.el.classList.toggle('on', L.key === selected);
+  }
+}
+
+/* =========================================================
+   SCENE 1 — devices on pedestals
+   ========================================================= */
+const A = {anims:[], items:{}};
+function buildAlat(){
+  const s = new THREE.Scene();
+  s.background = new THREE.Color(0x0f1a1c);
+  s.fog = new THREE.Fog(0x0f1a1c, 24, 52);
+  addLights(s, 14);
+  const floor = mesh(new THREE.PlaneGeometry(90,90), mat(0x172325,{roughness:.95}), 0,0,0, s, false);
+  floor.rotation.x = -Math.PI/2;
+  const grid = new THREE.GridHelper(90, 90, 0x2a3a3c, 0x1f2d2f); grid.position.y = .003; s.add(grid);
+
+  const metal = mat(0x8a9496,{metalness:.6, roughness:.4});
+  const place = (key, x, z, r, labelY, build) => {
+    const ped = new THREE.Group(); ped.position.set(x,0,z); ped.userData.key = key; s.add(ped);
+    mesh(C(r, r*1.04, .5, 48), mat(0xc9d1cf,{roughness:.85}), 0,.25,0, ped);
+    mesh(C(r*1.005, r*1.005, .02, 48), mat(0x0d7a70,{roughness:.5}), 0,.51,0, ped, false);
+    const g = build(); g.position.y = .52; ped.add(g);
+    A.items[key] = {ped, focus: V3(x, labelY*.55, z)};
+    addLabel('alat', ped, DEV[key].name, {key, off:[0,labelY,0]});
+    return g;
+  };
+
+  /* CCTV */
+  place('cctv', -6.2, -3, 1.3, 2.9, () => {
+    const g = new THREE.Group();
+    const white = mat(0xf0f2f1,{roughness:.4}), dark = mat(0x1b2224,{roughness:.35,metalness:.4}), glass = mat(0x071216,{roughness:.05,metalness:.85});
+    mesh(C(.06,.06,2.2,12), metal, 0,1.1,-.3, g);
+    mesh(B(.7,.06,.7), metal, 0,2.23,-.1, g);
+    mesh(B(.08,.08,.5), dark, 0,2.08,.1, g);
+    const head = new THREE.Group(); head.position.set(0,1.92,.3); head.rotation.x = .38; g.add(head);
+    mesh(B(.36,.32,.95), white, 0,0,.2, head);
+    mesh(B(.44,.04,1.1), white, 0,.19,.24, head);
+    const lens = mesh(C(.12,.12,.06,24), glass, 0,0,.69, head); lens.rotation.x = Math.PI/2;
+    const ring = mesh(new THREE.TorusGeometry(.13,.02,8,24), dark, 0,0,.68, head);
+    const led = mesh(new THREE.SphereGeometry(.025,8,8), basic(0xff3b3b), .12,-.11,.68, head, false);
+    // small edge chip on the pole
+    mesh(B(.22,.3,.1), dark, 0,1.3,-.22, g);
+    mesh(B(.06,.06,.01), basic(0x3cc2b5), 0,1.38,-.165, g, false);
+    A.anims.push(t => { led.visible = Math.sin(t*4) > 0; });
+    return g;
+  });
+
+  /* ToF */
+  place('tof', -2.1, -3, 1.3, 3.25, () => {
+    const g = new THREE.Group();
+    const white = mat(0xf4f5f4,{roughness:.35}), glass = mat(0x061014,{roughness:.05,metalness:.8});
+    mesh(C(.06,.06,2.7,12), metal, 0,1.35,-.9, g);
+    mesh(B(.8,.05,1.2), metal, 0,2.72,-.35, g);
+    mesh(B(.72,.14,.42), white, 0,2.62,0, g);
+    for(const x of [-.13,.13]) mesh(C(.055,.055,.02,20), glass, x,2.545,0, g, false);
+    mesh(B(.05,.02,.05), basic(0x2bd47a), .27,2.548,.12, g, false);
+    const cone = mesh(new THREE.ConeGeometry(1.08, 2.5, 40, 1, true),
+      basic(0x3cc2b5,{transparent:true, opacity:.1, side:THREE.DoubleSide, depthWrite:false}), 0,1.28,0, g, false);
+    const ringM = basic(0x3cc2b5,{transparent:true, opacity:.6, side:THREE.DoubleSide});
+    [[-.45,.2],[.35,-.3],[.15,.5]].forEach(([x,z]) => {
+      const p = makePerson(.55); p.position.set(x,0,z); g.add(p);
+      const r = new THREE.Mesh(new THREE.RingGeometry(.15,.19,24), ringM); r.rotation.x = -Math.PI/2; r.position.set(x,.68,z); g.add(r);
+    });
+    A.anims.push(t => { cone.material.opacity = .07 + .05*(Math.sin(t*2)*.5+.5); });
+    return g;
+  });
+
+  /* APC door counter */
+  place('apc', 2.1, -3, 1.5, 2.95, () => {
+    const g = new THREE.Group();
+    const frame = mat(0xc4ccca,{metalness:.5, roughness:.35}), dark = mat(0x1b2224,{roughness:.35,metalness:.4});
+    const glassM = mat(0x9fbcc2,{transparent:true, opacity:.5, metalness:.3, roughness:.1});
+    for(const x of [-.86,.86]) mesh(B(.12,2.1,.3), frame, x,1.05,0, g);
+    for(const x of [-1.3,1.3]) mesh(B(.78,2.42,.14), mat(0xd9dedc,{roughness:.6}), x,1.21,-.08, g);
+    mesh(B(3.38,.34,.36), frame, 0,2.25,0, g);
+    mesh(B(.62,.06,.16), dark, 0,2.05,.04, g);
+    for(const x of [-.13,.13]) mesh(C(.04,.04,.02,16), mat(0x061014,{metalness:.8,roughness:.05}), x,2.02,.04, g, false);
+    mesh(B(.04,.02,.04), basic(0x2bd47a), .24,2.02,.1, g, false);
+    const beam = mesh(B(1.5,1.98,.02), basic(0x3cc2b5,{transparent:true,opacity:.12,depthWrite:false}), 0,1.02,.04, g, false);
+    const lL = mesh(B(.82,2.0,.05), glassM, -.41,1.0,-.12, g);
+    const lR = mesh(B(.82,2.0,.05), glassM, .41,1.0,-.12, g);
+    const walker = makePerson(.62); g.add(walker);
+    A.anims.push(t => {
+      const cyc = (t % 6) / 6; // 0..1
+      const open = clamp(Math.min(cyc/.12, (1-cyc)/.12), 0, 1);
+      lL.position.x = -.41 - .78*open; lR.position.x = .41 + .78*open;
+      const wk = clamp((cyc-.18)/.6, 0, 1);
+      walker.position.set(0, 0, -.9 + 1.9*wk);
+      walker.visible = cyc > .16 && cyc < .82;
+      beam.material.opacity = (walker.visible && Math.abs(walker.position.z) < .25) ? .32 : .1;
+    });
+    return g;
+  });
+
+  /* Panel arah (sign) */
+  const S1 = makeSign();
+  place('sign', 6.4, -3, 1.6, 3.35, () => {
+    const g = new THREE.Group();
+    mesh(C(.07,.07,2.85,12), metal, 0,1.42,-.7, g);
+    mesh(B(3.1,.06,.9), metal, 0,2.86,-.3, g);
+    for(const x of [-1.2,1.2]) mesh(C(.02,.02,.5,8), metal, x,2.6,0, g);
+    mesh(B(3.0,.78,.18), mat(0x111719,{roughness:.5,metalness:.3}), 0,2.0,0, g);
+    const face = mesh(new THREE.PlaneGeometry(2.86,.7), basic(0xffffff,{map:S1.tex}), 0,2.0,.091, g, false);
+    let last = -1;
+    const arrows = ['←','←','↑','→'];
+    A.anims.push(t => {
+      const k = Math.floor(t/2.6); if(k === last) return; last = k;
+      const st = [0,1,2,3].map(()=>pick(['go','go','mid','stop']));
+      let best = st.indexOf('go'); if(best<0){ st[ri(0,3)]='go'; best = st.indexOf('go'); }
+      drawSign(S1, st, best, arrows);
+    });
+    return g;
+  });
+
+  /* Bogie with air-spring load sensor */
+  place('load', -4.4, 2.4, 1.6, 1.85, () => {
+    const g = new THREE.Group();
+    const steel = mat(0x3a4245,{metalness:.6,roughness:.45}), rubber = mat(0x141617,{roughness:.9}), wheel = mat(0x737c7f,{metalness:.8,roughness:.3});
+    for(const sx of [-.8,.8]){
+      for(const sz of [-.55,.55]){ const w = mesh(C(.33,.33,.1,28), wheel, sx,.33,sz, g); w.rotation.x = Math.PI/2; }
+      const a = mesh(C(.05,.05,1.3,10), steel, sx,.33,0, g); a.rotation.x = Math.PI/2;
+    }
+    for(const sz of [-.72,.72]) mesh(B(2.2,.22,.12), steel, 0,.42,sz, g);
+    mesh(B(.32,.2,1.56), steel, 0,.46,0, g);
+    const springs = [];
+    for(const sz of [-.6,.6]){
+      const sp = new THREE.Group(); sp.position.set(0,.56,sz); g.add(sp);
+      mesh(C(.24,.24,.05,24), steel, 0,.02,0, sp);
+      for(const y of [.13,.27]){ const t = mesh(new THREE.TorusGeometry(.2,.075,10,28), rubber, 0,y,0, sp); t.rotation.x = Math.PI/2; }
+      mesh(C(.26,.26,.05,24), steel, 0,.4,0, sp);
+      springs.push(sp);
+    }
+    const body = mesh(B(2.6,.14,1.9), mat(0xbfc7c9,{metalness:.4,roughness:.4,transparent:true,opacity:.82}), 0,1.03,0, g);
+    const tr = mesh(C(.06,.06,.18,16), mat(0xf08a24,{roughness:.4}), .34,.66,.6, g);
+    const curve = new THREE.CatmullRomCurve3([V3(.34,.75,.6),V3(.6,.92,.85),V3(1.0,.78,.98),V3(1.12,.56,.98)]);
+    mesh(new THREE.TubeGeometry(curve, 24, .018, 6), mat(0x202020), 0,0,0, g, false);
+    mesh(B(.24,.18,.1), mat(0x1b2224,{metalness:.4}), 1.12,.48,.98, g);
+    mesh(B(.04,.03,.01), basic(0x2bd47a), 1.18,.52,1.035, g, false);
+    A.anims.push(t => {
+      const s = .5 + .5*Math.sin(t*.9);
+      body.position.y = 1.03 - .06*s;
+      springs.forEach(sp => sp.scale.y = 1 - .15*s);
+      tr.material.emissive = new THREE.Color(0xf08a24).multiplyScalar(.25*s);
+    });
+    return g;
+  });
+
+  /* LED floor strip + PSD indicator */
+  place('strip', 0, 2.4, 1.75, 2.55, () => {
+    const g = new THREE.Group();
+    mesh(B(3.0,.12,1.9), mat(0xa4acaa,{roughness:.85}), 0,.06,0, g);
+    mesh(B(.05,.012,1.0), basic(0xf2f2ee), -.35,.126,.35, g, false);
+    mesh(B(.05,.012,1.0), basic(0xf2f2ee), .35,.126,.35, g, false);
+    mesh(B(2.8,.02,.1), mat(0x1b2224), 0,.125,-.38, g, false);
+    const led = mesh(B(2.7,.03,.05), basic(HEX.go), 0,.135,-.38, g, false);
+    const glow = mesh(new THREE.PlaneGeometry(2.9,.55), basic(HEX.go,{transparent:true,opacity:.35,blending:THREE.AdditiveBlending,depthWrite:false}), 0,.14,-.38, g, false);
+    glow.rotation.x = -Math.PI/2;
+    mesh(B(3.0,1.6,.05), mat(0x9fbcc2,{transparent:true,opacity:.35,roughness:.05}), 0,.92,-.85, g);
+    mesh(B(3.0,.26,.12), mat(0x1b2224,{metalness:.3}), 0,1.84,-.85, g);
+    const ind = mesh(B(.9,.1,.02), basic(HEX.go), 0,1.84,-.78, g, false);
+    [[-.35,.25],[.35,.55]].forEach(([x,z]) => { const p = makePerson(.55); p.position.set(x,.12,z); g.add(p); });
+    const seq = ['go','go','mid','stop','mid'];
+    A.anims.push(t => {
+      const st = seq[Math.floor(t/2.2) % seq.length];
+      led.material.color.setHex(HEX[st]); glow.material.color.setHex(HEX[st]); ind.material.color.setHex(HEX[st]);
+    });
+    return g;
+  });
+
+  /* Edge AI box */
+  place('edge', 4.4, 2.4, 1.3, 1.45, () => {
+    const g = new THREE.Group();
+    const body = mat(0x2a3133,{metalness:.5,roughness:.45});
+    mesh(B(1.3,.42,.85), body, 0,.21,0, g);
+    for(let i=0;i<12;i++) mesh(B(.04,.13,.75), mat(0x3d4648,{metalness:.6,roughness:.35}), -.55+i*.1,.48,0, g);
+    const leds = [];
+    for(let i=0;i<3;i++) leds.push(mesh(B(.05,.03,.01), basic([0x2bd47a,0x3c9cff,0xffb020][i]), -.5+i*.1,.3,.43, g, false));
+    for(let i=0;i<4;i++) mesh(B(.11,.07,.02), mat(0x0d1112), .05+i*.14,.15,.43, g, false);
+    for(const x of [-.5,.5]) mesh(C(.02,.02,.4,8), mat(0x1b1f20), x,.62,-.35, g);
+    const curve = new THREE.CatmullRomCurve3([V3(.55,.12,-.43),V3(.75,.05,-.7),V3(1.05,.01,-.6)]);
+    mesh(new THREE.TubeGeometry(curve, 16, .02, 6), mat(0x2f6fbf), 0,0,0, g, false);
+    A.anims.push(t => { leds.forEach((l,i) => l.visible = Math.sin(t*(3+i*2.3)+i) > -.3); });
+    return g;
+  });
+
+  return s;
+}
+
+/* =========================================================
+   SCENE 2 — station + train simulation
+   ========================================================= */
+const CAP = 34;                         // comfortable boarding capacity per car (sim units)
+const PROFILE = {load:[26,27,23,29], alight:[6,13,4,5]};   // "historical" Monday 09:00 pattern
+const BIAS = [.08,.14,.3,.48];          // where people go without guidance (corridor is near zone 3–4)
+const CORR_X = 10, ESC_X = -14;
+const ARROWS = ['←','←','←','→'];
+const SIM = {
+  carX:[], doorX:[], zones:[], people:[], phase:'gap', t:4, speed:1, ai:true,
+  inc:null, trainLoad:[0,0,0,0], spawnAcc:0, lightAcc:99, lights:['off','off','off','off'], best:-1,
+  lastLeft:null, results:{on:[], off:[]}, train:null, cars:[], psd:[], scene:null, sign:null, items:{}
+};
+for(let i=0;i<4;i++){ SIM.carX[i] = (i-1.5)*9.9; SIM.doorX[i] = [-3,0,3].map(d => SIM.carX[i]+d); }
+
+function genTrain(){
+  const load = PROFILE.load.map(v => clamp(v + ri(-3,3), 12, CAP));
+  const ap = PROFILE.alight.slice();
+  const aa = ap.map((v,i) => clamp(v + ri(-2,2), 0, load[i]));
+  const F = load.map((l,i) => Math.max(0, CAP - l + ap[i]));
+  return {load, ap, aa, F};
+}
+
+function buildMTR(){
+  const s = new THREE.Scene(); SIM.scene = s;
+  s.background = new THREE.Color(0x0e1719);
+  s.fog = new THREE.Fog(0x0e1719, 70, 150);
+  addLights(s, 32);
+  const floorM = mat(0xd6d9d3,{roughness:.75}), cut = mat(0x5c6668,{roughness:.8}), wallM = mat(0xe4e1d9,{roughness:.8});
+  const metal = mat(0x8d979a,{metalness:.6,roughness:.35}), dark = mat(0x222a2c,{roughness:.6,metalness:.3});
+  const glassM = mat(0xa9cbd2,{transparent:true, opacity:.26, roughness:.05, metalness:.2});
+
+  const ground = mesh(new THREE.PlaneGeometry(200,200), mat(0x121b1d,{roughness:1}), 0,-1.62,0, s, false); ground.rotation.x = -Math.PI/2;
+
+  // platform (cutaway model)
+  mesh(B(50,1.3,9.6), floorM, 0,-.65,2.2, s);
+  mesh(B(50,.06,.35), mat(0xe8c21a,{roughness:.6}), 0,.005,-2.2, s, false);   // safety band behind PSD
+  // trackbed + rails + sleepers
+  mesh(B(110,.3,5), mat(0x2b3031,{roughness:.95}), 0,-1.45,-5.1, s);
+  for(const rz of [-5.72,-4.28]) mesh(B(110,.12,.1), metal, 0,-1.24,rz, s);
+  const slM = mat(0x5a5048,{roughness:.9});
+  for(let x=-54; x<=54; x+=.9) mesh(B(.25,.08,2.2), slM, x,-1.33,-5, s, false);
+  // far wall behind the track (full height)
+  mesh(B(50,6.2,.3), mat(0xcfd4d0,{roughness:.85}), 0,1.5,-7.75, s);
+  for(let i=0;i<5;i++) mesh(B(6,1.6,.05), mat(0x2b5d6b,{roughness:.6}), -20+i*10,1.6,-7.58, s, false);
+  // tunnels at both ends hide the train
+  for(const sx of [-1,1]){
+    mesh(B(40,.4,5.6), dark, sx*45,3.6,-5.1, s);
+    mesh(B(40,5.6,.3), dark, sx*45,1.0,-2.45, s);
+    mesh(B(40,5.6,.3), dark, sx*45,1.0,-7.75, s);
+    mesh(B(.5,1.2,9.6), wallM, sx*25.2,.6,2.2, s);          // low cutaway end wall
+    mesh(B(.6,1.6,5.6), dark, sx*25.3,3.0,-5.1, s);          // tunnel portal header
+  }
+  // back wall (cutaway, low) with corridor opening
+  mesh(B(33.1,1.1,.3), wallM, -8.45,.55,7.15, s);
+  mesh(B(12.9,1.1,.3), wallM, 18.55,.55,7.15, s);
+  for(const x of [-8.45,18.55]) mesh(B(x<0?33.1:12.9,.04,.32), cut, x,1.12,7.15, s, false);
+  // corridor / tunnel to the platform
+  mesh(B(4.2,.2,10), mat(0xcfd2cc,{roughness:.8}), CORR_X,-.1,12.2, s);
+  for(const x of [CORR_X-2.15, CORR_X+2.15]) mesh(B(.3,1.1,10), wallM, x,.55,12.2, s);
+  for(let z=8; z<17; z+=1.2) mesh(B(.6,.012,.18), basic(0xf2f2ee), CORR_X,.005,z, s, false);
+
+  // escalator (exit only)
+  const esc = new THREE.Group(); esc.position.set(ESC_X,0,0); s.add(esc);
+  const len = Math.hypot(4.4, 2.6), ang = Math.atan2(2.6, 4.4);
+  const ramp = mesh(B(1.5,.35,len), mat(0x6d7678,{metalness:.5,roughness:.4}), 0,1.2,4.75, esc); ramp.rotation.x = -ang;
+  for(const x of [-.8,.8]){ const r = mesh(B(.1,.9,len), mat(0x3a4245,{metalness:.4}), x,1.7,4.75, esc); r.rotation.x = -ang; }
+  mesh(B(1.7,.05,1.0), metal, 0,.03,2.1, esc, false);
+
+  // overhead gantry for sensors (ceiling removed in this cutaway)
+  mesh(B(48,.18,.25), mat(0x4a5355,{metalness:.5,roughness:.4}), 0,4.35,-1.0, s);
+
+  // platform screen doors (PSD)
+  const doors = SIM.doorX.flat().sort((a,b)=>a-b);
+  mesh(B(50,.36,.3), dark, 0,2.42,-2.55, s);
+  let x0 = -25;
+  doors.forEach(dx => {
+    const w = (dx - .85) - x0;
+    if(w > .05) mesh(B(w,2.2,.06), glassM, x0 + w/2,1.12,-2.55, s, false);
+    mesh(B(.1,2.24,.2), metal, dx-.9,1.12,-2.55, s); mesh(B(.1,2.24,.2), metal, dx+.9,1.12,-2.55, s);
+    const L = mesh(B(.85,2.1,.05), mat(0xb5d0d6,{transparent:true,opacity:.42,roughness:.05}), dx-.425,1.07,-2.5, s, false);
+    const R = mesh(B(.85,2.1,.05), mat(0xb5d0d6,{transparent:true,opacity:.42,roughness:.05}), dx+.425,1.07,-2.5, s, false);
+    SIM.psd.push({dx, L, R});
+    x0 = dx + .85;
+  });
+  mesh(B(25-x0,2.2,.06), glassM, x0 + (25-x0)/2,1.12,-2.55, s, false);
+
+  // zones: floor LED strip, glow, header indicator, queue markings, ToF sensor, labels
+  const tofGroups = [];
+  for(let i=0;i<4;i++){
+    const cx = SIM.carX[i];
+    const strip = mesh(B(9.0,.02,.12), basic(HEX.off), cx,.012,-2.05, s, false);
+    const glow = mesh(new THREE.PlaneGeometry(9.3,.9), basic(HEX.off,{transparent:true,opacity:.3,blending:THREE.AdditiveBlending,depthWrite:false}), cx,.025,-2.05, s, false);
+    glow.rotation.x = -Math.PI/2;
+    const ind = mesh(B(2.2,.2,.04), basic(HEX.off), cx,2.42,-2.38, s, false);
+    for(const dx of SIM.doorX[i]) for(const off of [-.32,.32])
+      mesh(B(.05,.012,1.4), basic(0xf2f2ee), dx+off,.008,-1.15, s, false);
+    // ToF above zone
+    const tg = new THREE.Group(); tg.position.set(cx,0,-.6); s.add(tg);
+    mesh(B(.06,.2,.06), metal, 0,4.18,-.4, tg);
+    mesh(B(.7,.14,.42), mat(0xf4f5f4,{roughness:.35}), 0,4.05,-.3, tg);
+    mesh(new THREE.ConeGeometry(2.6, 3.95, 32, 1, true), basic(0x3cc2b5,{transparent:true,opacity:.05,side:THREE.DoubleSide,depthWrite:false}), 0,2.0,-.3, tg, false);
+    tofGroups.push(tg);
+    const zl = new THREE.Object3D(); zl.position.set(cx,2.9,.6); s.add(zl);
+    const lab = addLabel('mtr', zl, '', {});
+    SIM.zones.push({q:[], strip, glow, ind, lab});
+  }
+  // CCTV on the gantry
+  const cams = [];
+  for(const cx of [-15,0,15]){
+    const g = new THREE.Group(); g.position.set(cx,4.2,-1.0); s.add(g);
+    mesh(B(.08,.25,.08), dark, 0,0,0, g);
+    const head = new THREE.Group(); head.position.set(0,-.2,.2); head.rotation.x = .7; g.add(head);
+    mesh(B(.32,.28,.8), mat(0xf0f2f1,{roughness:.4}), 0,0,.2, head);
+    mesh(B(.4,.04,.92), mat(0xf0f2f1,{roughness:.4}), 0,.17,.22, head);
+    cams.push(g);
+  }
+  // Edge AI cabinet
+  const cab = new THREE.Group(); cab.position.set(-21.6,0,6.4); s.add(cab);
+  mesh(B(1.5,2.2,.8), mat(0x2a3133,{metalness:.5,roughness:.45}), 0,1.1,0, cab);
+  mesh(B(1.4,.02,.02), basic(0x2bd47a), 0,1.9,-.41, cab, false);
+  for(let i=0;i<6;i++) mesh(B(1.3,.03,.01), mat(0x3d4648), 0,.5+i*.2,-.405, cab, false);
+  // corridor sign (faces people walking in from the corridor)
+  const sg = new THREE.Group(); sg.position.set(CORR_X,0,7.9); s.add(sg);
+  for(const x of [-2.0,2.0]) mesh(C(.07,.07,3.3,10), metal, x,1.65,0, sg);
+  mesh(B(4.2,.1,.12), metal, 0,3.3,0, sg);
+  mesh(B(3.7,.95,.18), mat(0x111719,{roughness:.5,metalness:.3}), 0,2.7,0, sg);
+  SIM.sign = makeSign();
+  mesh(new THREE.PlaneGeometry(3.56,.86), basic(0xffffff,{map:SIM.sign.tex}), 0,2.7,.091, sg, false);
+
+  // train
+  buildTrain(s);
+
+  // device labels
+  addLabel('mtr', cams[1], DEV.cctv.name, {key:'cctv', off:[0,.5,0]});
+  addLabel('mtr', tofGroups[2], DEV.tof.name, {key:'tof', off:[0,4.6,-.3]});
+  addLabel('mtr', SIM.cars[1].apc, DEV.apc.name, {key:'apc', off:[0,.45,0]});
+  addLabel('mtr', SIM.cars[1].spring, DEV.load.name, {key:'load', off:[0,.1,1.2]});
+  addLabel('mtr', cab, DEV.edge.name, {key:'edge', off:[0,2.6,0]});
+  addLabel('mtr', sg, DEV.sign.name, {key:'sign', off:[0,3.6,0]});
+  addLabel('mtr', SIM.zones[0].strip, DEV.strip.name, {key:'strip', off:[-2.5,.15,.4]});
+  const exitL = new THREE.Object3D(); exitL.position.set(ESC_X,3.4,5.5); s.add(exitL);
+  addLabel('mtr', exitL, 'Eskalator keluar', {});
+  const corrL = new THREE.Object3D(); corrL.position.set(CORR_X,1.2,15); s.add(corrL);
+  addLabel('mtr', corrL, 'Koridor masuk', {});
+
+  SIM.items = {
+    cctv:{focus:V3(0,3,0), view:[V3(6,7,10)]},
+    tof:{focus:V3(SIM.carX[2],3,-.9)},
+    apc:{focus:V3(SIM.doorX[1][1],2,-3.4)},
+    load:{focus:V3(SIM.carX[1]-3.3,-.7,-3.6)},
+    edge:{focus:V3(-21.6,1.2,6.4)},
+    sign:{focus:V3(CORR_X,2.6,7.9)},
+    strip:{focus:V3(SIM.carX[0],.2,-2.0)}
+  };
+  return s;
+}
+
+function buildTrain(s){
+  const t = new THREE.Group(); t.position.set(-66,0,-5); s.add(t); SIM.train = t;
+  const bodyM = mat(0xd5dadb,{metalness:.55,roughness:.35}), winM = mat(0x13202a,{roughness:.12,metalness:.6});
+  const stripeM = mat(0xb9343c,{roughness:.5}), doorM = mat(0xbcc3c5,{metalness:.5,roughness:.35});
+  const under = mat(0x272c2e,{roughness:.8}), wheelM = mat(0x5b6366,{metalness:.8,roughness:.3});
+  const springM = mat(0xf08a24,{roughness:.4});
+  for(let i=0;i<4;i++){
+    const car = new THREE.Group(); car.position.x = SIM.carX[i]; t.add(car);
+    mesh(B(9.4,2.9,3.0), bodyM, 0,1.25,0, car);
+    mesh(B(9.2,.25,2.6), bodyM, 0,2.82,0, car);
+    for(const z of [1.505,-1.505]){
+      mesh(B(9.0,.9,.02), winM, 0,1.7,z, car, false);
+      mesh(B(9.4,.14,.02), stripeM, 0,.75,z, car, false);
+    }
+    mesh(B(9.0,.6,2.6), under, 0,-.5,0, car);
+    let spring = null;
+    for(const bx of [-3.3,3.3]){
+      mesh(B(2.3,.3,2.3), under, bx,-.9,0, car);
+      for(const wx of [-.75,.75]) for(const wz of [-1.0,1.0]){ const w = mesh(C(.38,.38,.12,20), wheelM, bx+wx,-.98,wz, car); w.rotation.x = Math.PI/2; }
+      for(const sz of [-1.0,1.0]){ const sp = mesh(C(.22,.22,.28,16), springM, bx,-.62,sz, car); if(bx<0 && sz>0) spring = sp; }
+    }
+    const leaves = [];
+    let apc = null;
+    for(const d of [-3,0,3]){
+      const L = mesh(B(.68,2.05,.06), doorM, d-.34,1.0,1.52, car, false);
+      const R = mesh(B(.68,2.05,.06), doorM, d+.34,1.0,1.52, car, false);
+      for(const leaf of [L,R]) mesh(B(.38,.6,.01), winM, 0,.45,.035, leaf, false);
+      leaves.push({d, L, R});
+      const a = mesh(B(.5,.08,.1), mat(0x1b2224), d,2.18,1.56, car, false);
+      mesh(B(.05,.03,.01), basic(0x2bd47a), d+.18,2.18,1.615, car, false);
+      if(d===0) apc = a;
+    }
+    const roof = mesh(B(8.4,.08,.5), basic(HEX.go), 0,2.98,0, car, false);
+    if(i>0) mesh(B(.5,2.4,2.2), under, -4.95,1.2,0, car);
+    if(i===0) mesh(B(.35,2.6,2.8), winM, -4.85,1.35,0, car);
+    if(i===3) mesh(B(.35,2.6,2.8), winM, 4.85,1.35,0, car);
+    const lab = addLabel('mtr', car, '', {off:[0,3.5,0]});
+    SIM.cars.push({car, leaves, roof, apc, spring, lab});
+  }
+}
+
+function setDoors(o){
+  const e = o*o*(3-2*o);
+  SIM.cars.forEach(c => c.leaves.forEach(({d,L,R}) => { L.position.x = d-.34-.66*e; R.position.x = d+.34+.66*e; }));
+  SIM.psd.forEach(({dx,L,R}) => { L.position.x = dx-.425-.85*e; R.position.x = dx+.425+.85*e; });
+}
+
+/* passengers */
+function slotPos(zi, k){
+  const door = k % 3, side = Math.floor(k/3) % 2, row = Math.floor(k/6);
+  return V3(SIM.doorX[zi][door] + (side ? .32 : -.32), 0, -1.75 + row*.52);
+}
+function newPerson(x,y,z){
+  const g = makePerson(1); g.position.set(x,y,z); SIM.scene.add(g);
+  const p = {g, path:[], state:'', delay:0, speed:rand(2.1,2.7), zone:-1, dead:false};
+  SIM.people.push(p); return p;
+}
+function removePerson(p){ p.dead = true; SIM.scene.remove(p.g); }
+function reassign(zi){
+  SIM.zones[zi].q.forEach((p,k) => {
+    const sp = slotPos(zi,k);
+    if(p.state === 'queued'){ p.state = 'toQueue'; p.path = [sp]; }
+    else if(p.state === 'toQueue'){ p.path[p.path.length-1] = sp; }
+  });
+}
+function chooseZone(){
+  const Q = SIM.zones.map(z => z.q.length);
+  if(SIM.ai && Math.random() < .85){               // 85% follow the lights
+    const w = SIM.inc.F.map((f,i) => Math.exp((f - Q[i]) / 3));
+    return weighted(w);
+  }
+  return weighted(BIAS);
+}
+function spawnArrival(){
+  if(SIM.people.length > 380) return;
+  const zi = chooseZone(), z = SIM.zones[zi];
+  const sx = CORR_X + rand(-1.3,1.3);
+  const p = newPerson(sx, 0, 17.5);
+  p.state = 'toQueue'; p.zone = zi;
+  z.q.push(p);
+  p.path = [V3(sx,0,7.6), V3(sx + (SIM.carX[zi]-sx)*.15, 0, 5.8), slotPos(zi, z.q.length-1)];
+}
+function spawnAlighting(){
+  for(let i=0;i<4;i++){
+    const n = SIM.inc.aa[i];
+    for(let j=0;j<n;j++){
+      const dx = SIM.doorX[i][j%3] + rand(-.2,.2);
+      const p = newPerson(dx, 0, -4.2);
+      p.state = 'alighting'; p.delay = Math.floor(j/3)*.45 + rand(0,.15); p.g.visible = false; p.speed = rand(2.4,2.9);
+      const out = i < 2
+        ? [V3(ESC_X+rand(-.4,.4),0,1.4), V3(ESC_X+rand(-.3,.3),0,2.6), V3(ESC_X,2.6,7.0)]
+        : [V3(CORR_X+rand(-1.2,1.2),0,6.0), V3(CORR_X+rand(-1.2,1.2),0,17.5)];
+      p.path = [V3(dx,0,-2.1), V3(dx+rand(-1.5,1.5),0,-.6), ...out];
+      SIM.trainLoad[i] = Math.max(0, SIM.trainLoad[i]-1);
+    }
+  }
+}
+function startBoarding(){
+  let left = 0;
+  SIM.zones.forEach((z, zi) => {
+    const free = Math.max(0, CAP - SIM.trainLoad[zi]);
+    const cand = z.q.filter(p => p.state === 'queued');
+    const n = Math.min(free, cand.length);
+    left += cand.length - n;
+    const perDoor = [0,0,0];
+    cand.slice(0,n).forEach(p => {
+      let di = 0, best = 1e9;
+      SIM.doorX[zi].forEach((dx,k) => { const d = Math.abs(dx - p.g.position.x); if(d < best){ best = d; di = k; } });
+      const dx = SIM.doorX[zi][di];
+      p.state = 'boarding'; p.car = zi; p.delay = perDoor[di]++ * .3; p.speed = 2.6;
+      p.path = [V3(dx + rand(-.15,.15),0,-2.2), V3(dx,0,-3.3), V3(dx,0,-4.4)];
+    });
+    z.q = z.q.filter(p => p.state !== 'boarding');
+    reassign(zi);
+  });
+  SIM.lastLeft = left;
+  const arr = SIM.results[SIM.ai ? 'on' : 'off']; arr.push(left); if(arr.length > 12) arr.shift();
+}
+function stepPerson(p, dt){
+  if(p.delay > 0){ p.delay -= dt; if(p.delay <= 0) p.g.visible = true; return; }
+  if(!p.path.length) return;
+  const tgt = p.path[0], pos = p.g.position;
+  const dx = tgt.x-pos.x, dy = tgt.y-pos.y, dz = tgt.z-pos.z, d = Math.hypot(dx,dy,dz), st = p.speed*dt;
+  if(d <= st){
+    pos.copy(tgt); p.path.shift();
+    if(!p.path.length){
+      if(p.state === 'toQueue') p.state = 'queued';
+      else if(p.state === 'boarding'){ SIM.trainLoad[p.car]++; removePerson(p); }
+      else if(p.state === 'alighting') removePerson(p);
+    }
+  } else {
+    pos.x += dx/d*st; pos.y += dy/d*st; pos.z += dz/d*st;
+    if(Math.abs(dx)+Math.abs(dz) > .01) p.g.rotation.y = Math.atan2(dx, dz);
+  }
+}
+
+/* lights */
+function computeLights(){
+  const Q = SIM.zones.map(z => z.q.length), F = SIM.inc.F;
+  if(!SIM.ai){ SIM.lights = ['off','off','off','off']; SIM.best = -1; }
+  else {
+    SIM.lights = Q.map((q,i) => { const r = q / Math.max(F[i], .5); return r < .75 ? 'go' : r < 1.05 ? 'mid' : 'stop'; });
+    let bi = 0, bv = -1e9; F.forEach((f,i) => { if(f - Q[i] > bv){ bv = f - Q[i]; bi = i; } });
+    SIM.best = bi;
+  }
+  SIM.zones.forEach((z,i) => {
+    const h = HEX[SIM.lights[i]];
+    z.strip.material.color.setHex(h); z.glow.material.color.setHex(h); z.ind.material.color.setHex(h);
+    z.glow.material.opacity = SIM.ai ? .35 : .08;
+  });
+  drawSign(SIM.sign, SIM.lights, SIM.best, ARROWS);
+}
+
+/* phases */
+const PHASE_TXT = {
+  gap:'Menunggu kereta · AI memprediksi ruang di kereta berikut',
+  arrive:'Kereta tiba · data beban tiap gerbong sudah diterima',
+  open:'Pintu dibuka',
+  alight:'Penumpang turun · dihitung sensor pintu (APC)',
+  board:'Penumpang naik dari tiap zona',
+  close:'Pintu ditutup',
+  depart:'Kereta berangkat · hasil dicatat ke data historis'
+};
+function go(ph){ SIM.phase = ph; SIM.t = 0; $('#phase').textContent = PHASE_TXT[ph]; }
+function updateSim(dt){
+  SIM.t += dt;
+  const tr = SIM.train;
+  switch(SIM.phase){
+    case 'gap': if(SIM.t > 9) go('arrive'); break;
+    case 'arrive': { const k = Math.min(SIM.t/5,1), e = 1-Math.pow(1-k,3); tr.position.x = -66 + 66*e; if(k>=1) go('open'); break; }
+    case 'open': setDoors(Math.min(SIM.t,1)); if(SIM.t > 1){ go('alight'); spawnAlighting(); } break;
+    case 'alight': if(SIM.t > 3.4){ go('board'); startBoarding(); } break;
+    case 'board': if((SIM.t > 1 && !SIM.people.some(p => !p.dead && p.state==='boarding')) || SIM.t > 9) go('close'); break;
+    case 'close': setDoors(1 - Math.min(SIM.t/1.2,1)); if(SIM.t > 1.3) go('depart'); break;
+    case 'depart': { const k = Math.min(SIM.t/5,1); tr.position.x = 66*k*k*k; if(k>=1){ SIM.inc = genTrain(); SIM.trainLoad = SIM.inc.load.slice(); tr.position.x = -66; SIM.lightAcc = 99; go('gap'); } break; }
+  }
+  tr.visible = SIM.phase !== 'gap';
+  // arrivals from the corridor
+  SIM.spawnAcc += dt;
+  while(SIM.spawnAcc > .5){ SIM.spawnAcc -= .5; spawnArrival(); }
+  SIM.people.forEach(p => { if(!p.dead) stepPerson(p, dt); });
+  if(SIM.people.length > 60 && SIM.people.some(p=>p.dead)) SIM.people = SIM.people.filter(p => !p.dead);
+  SIM.lightAcc += dt;
+  if(SIM.lightAcc > 2){ SIM.lightAcc = 0; computeLights(); }
+  // car roof indicators
+  SIM.cars.forEach((c,i) => { const r = SIM.trainLoad[i]/CAP; c.roof.material.color.setHex(HEX[r < .7 ? 'go' : r < .9 ? 'mid' : 'stop']); });
+}
+
+/* UI */
+function buildRows(){
+  $('#zrows').innerHTML = [0,1,2,3].map(i => `<tr>
+    <td><span class="zname"><span class="chip" id="zc${i}"></span>Zona ${i+1}</span><small>Gerbong ${i+1}</small></td>
+    <td class="num" id="zq${i}">0</td>
+    <td class="num"><span id="zf${i}">0</span><small id="zx${i}"></small></td>
+    <td><span class="state" id="zs${i}">–</span></td></tr>`).join('');
+}
+function updateUI(){
+  const Q = SIM.zones.map(z => z.q.length);
+  Q.forEach((q,i) => {
+    $('#zq'+i).textContent = q;
+    $('#zf'+i).textContent = SIM.inc.F[i];
+    $('#zx'+i).textContent = `${CAP}−${SIM.inc.load[i]}+${SIM.inc.ap[i]}`;
+    const st = SIM.lights[i];
+    $('#zc'+i).style.background = `var(--${st})`;
+    $('#zs'+i).textContent = st==='off' ? 'Mati' : (i===SIM.best ? 'Disarankan' : STATE_TXT[st]);
+    SIM.zones[i].lab.el.innerHTML = `<span class="dot" style="background:${CSS[st]}"></span><b>Zona ${i+1}</b> · ${q} antre`;
+  });
+  SIM.cars.forEach((c,i) => { c.lab.el.innerHTML = `Gerbong ${i+1} · ${Math.round(SIM.trainLoad[i]/CAP*100)}%`; });
+  const mean = Q.reduce((a,b)=>a+b,0)/4;
+  if(mean < 1) $('#m-cv').textContent = '–';
+  else {
+    const sd = Math.sqrt(Q.reduce((a,q)=>a+(q-mean)**2,0)/4), cv = sd/mean*100;
+    $('#m-cv').textContent = `${Math.round(cv)}% · ${cv < 25 ? 'merata' : cv < 50 ? 'sedang' : 'timpang'}`;
+  }
+  $('#m-left').textContent = SIM.lastLeft == null ? '–' : `${SIM.lastLeft} orang`;
+  const avg = a => a.length ? (a.reduce((x,y)=>x+y,0)/a.length).toFixed(1) + ` · ${a.length} kereta` : '–';
+  $('#m-on').textContent = avg(SIM.results.on);
+  $('#m-off').textContent = avg(SIM.results.off);
+}
+
+/* ---------- scenes, views, selection ---------- */
+const scenes = {alat: buildAlat(), mtr: null};
+SIM.inc = genTrain(); SIM.trainLoad = SIM.inc.load.slice();
+scenes.mtr = buildMTR();
+buildRows();
+// start with a realistic queue already on the platform
+for(let n=0;n<34;n++){
+  const zi = weighted(SIM.inc.F.map(f=>f+2)), z = SIM.zones[zi];
+  const p = newPerson(0,0,0); p.zone = zi; z.q.push(p);
+  p.g.position.copy(slotPos(zi, z.q.length-1)); p.state = 'queued'; p.g.rotation.y = Math.PI;
+}
+computeLights(); go('gap'); SIM.t = 4;
+
+const VIEWS = {
+  alat:{pos:V3(0,9,16.5), tgt:V3(0,1.2,-.4)},
+  overview:{pos:V3(6,25,31), tgt:V3(0,0,-.5)},
+  corridor:{pos:V3(17,6.5,23), tgt:V3(8,1.6,5)},
+  platform:{pos:V3(-24,6.5,9), tgt:V3(-8,1,-1.5)},
+  train:{pos:V3(-9,3.4,3.2), tgt:V3(-4,1.3,-4)}
+};
+const saved = {alat:{pos:VIEWS.alat.pos.clone(), tgt:VIEWS.alat.tgt.clone()}, mtr:{pos:VIEWS.overview.pos.clone(), tgt:VIEWS.overview.tgt.clone()}};
+camera.position.copy(saved.alat.pos); controls.target.copy(saved.alat.tgt);
+
+let fly = null;
+function startFly(pos, tgt){
+  if(reduceMotion){ camera.position.copy(pos); controls.target.copy(tgt); return; }
+  fly = {p0:camera.position.clone(), t0:controls.target.clone(), p1:pos.clone(), t1:tgt.clone(), k:0};
+}
+function flyToTarget(tgt, dist){
+  const dir = camera.position.clone().sub(controls.target).normalize();
+  if(dir.y < .35){ dir.y = .35; dir.normalize(); }
+  startFly(tgt.clone().add(dir.multiplyScalar(dist)), tgt);
+}
+controls.addEventListener('start', () => { fly = null; });
+
+function detailHTML(key, withMtr){
+  const d = DEV[key];
+  return `<span class="eyebrow">${d.tag}</span>
+    <h3>${d.name}</h3>
+    <p>${d.role}</p>
+    <dl>
+      <div><dt>${withMtr ? 'Di stasiun ini' : 'Dipasang di'}</dt><dd>${withMtr ? d.mtr : d.where}</dd></div>
+      <div><dt>Data yang dikirim</dt><dd>${d.data}</dd></div>
+      <div class="proto"><dt>Versi prototipe hackathon</dt><dd>${d.proto}</dd></div>
+    </dl>`;
+}
+function select(key, fly){
+  selected = key;
+  if(current === 'alat'){
+    $('#detail-alat').innerHTML = detailHTML(key, false);
+    document.querySelectorAll('#devlist .devbtn').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.key === key)));
+    if(fly) flyToTarget(A.items[key].focus, 6);
+  } else {
+    $('#detail-mtr').innerHTML = detailHTML(key, true);
+    if(fly) flyToTarget(SIM.items[key].focus, key==='load' || key==='apc' ? 8 : 12);
+  }
+}
+$('#devlist').innerHTML = ORDER.map(k => `<button class="devbtn" data-key="${k}" aria-pressed="false">${DEV[k].name}</button>`).join('');
+document.querySelectorAll('#devlist .devbtn').forEach(b => b.addEventListener('click', () => select(b.dataset.key, true)));
+select('cctv', false);
+
+function setTab(name){
+  if(name === current) return;
+  saved[current] = {pos:camera.position.clone(), tgt:controls.target.clone()};
+  current = name; fly = null;
+  camera.position.copy(saved[name].pos); controls.target.copy(saved[name].tgt);
+  $('#tab-alat').setAttribute('aria-selected', String(name==='alat'));
+  $('#tab-mtr').setAttribute('aria-selected', String(name==='mtr'));
+  $('#panel-alat').hidden = name !== 'alat';
+  $('#panel-mtr').hidden = name !== 'mtr';
+  selected = null;
+  if(name === 'alat') select(document.querySelector('#devlist [aria-pressed="true"]')?.dataset.key || 'cctv', false);
+  else $('#detail-mtr').innerHTML = '<span class="eyebrow">Perangkat</span><p class="muted">Klik label perangkat di model (titik hijau) untuk melihat fungsi dan posisinya di stasiun.</p>';
+  try{ history.replaceState(null,'', name==='mtr' ? '#mtr' : '#alat'); }catch(e){}
+}
+$('#tab-alat').addEventListener('click', () => setTab('alat'));
+$('#tab-mtr').addEventListener('click', () => setTab('mtr'));
+$('#ai').addEventListener('change', e => { SIM.ai = e.target.checked; computeLights(); updateUI(); });
+document.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => {
+  SIM.speed = +b.dataset.speed;
+  document.querySelectorAll('.seg button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+}));
+function fitView(v){ // pull wide shots back on narrow stages
+  const f = clamp(1.55 / Math.max(camera.aspect, .3), 1, 2.3);
+  return v.tgt.clone().add(v.pos.clone().sub(v.tgt).multiplyScalar(f));
+}
+document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => { const v = VIEWS[b.dataset.view]; startFly(fitView(v), v.tgt); }));
+
+// click-to-select on meshes (scene 1)
+const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
+let down = null;
+canvas.addEventListener('pointerdown', e => { down = [e.clientX, e.clientY]; });
+canvas.addEventListener('pointerup', e => {
+  if(!down || Math.hypot(e.clientX-down[0], e.clientY-down[1]) > 5 || current !== 'alat') return;
+  const r = canvas.getBoundingClientRect();
+  ptr.set((e.clientX-r.left)/r.width*2-1, -(e.clientY-r.top)/r.height*2+1);
+  ray.setFromCamera(ptr, camera);
+  const hit = ray.intersectObjects(scenes.alat.children, true)[0];
+  let o = hit && hit.object;
+  while(o && !o.userData.key) o = o.parent;
+  if(o) select(o.userData.key, true);
+});
+
+if(location.hash === '#mtr') setTab('mtr');
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => computeLights());
+
+/* ---------- loop ---------- */
+const clock = new THREE.Clock();
+let uiAcc = 0, tAll = 0;
+function loop(){
+  const dt = Math.min(clock.getDelta(), .05);
+  tAll += dt;
+  if(fly){
+    fly.k = Math.min(1, fly.k + dt/.9);
+    const e = fly.k < .5 ? 2*fly.k*fly.k : 1 - Math.pow(-2*fly.k+2, 2)/2;
+    camera.position.lerpVectors(fly.p0, fly.p1, e);
+    controls.target.lerpVectors(fly.t0, fly.t1, e);
+    if(fly.k >= 1) fly = null;
+  }
+  controls.update();
+  if(current === 'alat') A.anims.forEach(f => f(tAll));
+  else {
+    const sdt = dt * SIM.speed;
+    for(let i=0;i<SIM.speed;i++) updateSim(sdt / SIM.speed);
+    uiAcc += dt; if(uiAcc > .25){ uiAcc = 0; updateUI(); }
+  }
+  renderer.render(scenes[current], camera);
+  updateLabels();
+  requestAnimationFrame(loop);
+}
+resize();
+saved.alat.pos = fitView(VIEWS.alat); saved.mtr.pos = fitView(VIEWS.overview);
+if(current === 'alat') camera.position.copy(saved.alat.pos); else camera.position.copy(saved.mtr.pos);
+updateUI(); loop();
+})();
+</script>
