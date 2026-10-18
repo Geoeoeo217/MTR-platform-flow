@@ -31,7 +31,7 @@ The simulations show the idea; `live/` is the working system, running in the bro
 | 3. Decision | room = capacity − on board + forecast getting off; ratio = queue ÷ room; green < 0.7, amber < 1.0, else red; red at once if the queue area is full; a light holds a few seconds before it relaxes | Rules on AI outputs |
 | 4. Communication | When the lights change, the GenAI model writes the tunnel-sign line and a platform announcement in English, 繁體中文 and 简体中文, plus a note for staff | Generative AI (text) |
 
-**Try it:** open the live link, click **Start webcam**, and stand in the queue zones. **Manual counts** lets you type queue numbers to test the decisions without a camera. The GenAI parts can run on either of two models, chosen in **Settings & API key**:
+**Try it:** open the live link, click **Start webcam**, and stand in the queue zones. No camera or crowd handy? Click **Virtual CCTV (3D)**: a live 3D platform filmed from a wall-mounted camera angle, with people walking in, queuing, and getting on and off the train in step with the system's train cycle. The camera AI and GenAI read it exactly like a real feed, with queue areas and exit lines already lined up with the doors. **Manual counts** lets you type queue numbers to test the decisions without any camera. The GenAI parts can run on either of two models, chosen in **Settings & API key**:
 
 - **Ollama (free, on your own computer).** See *Using Ollama* below.
 - **Claude.** Paste your own Anthropic API key. It is used only from your browser.
@@ -61,7 +61,7 @@ To use Ollama from the GitHub Pages link instead, allow that site and restart th
 launchctl setenv OLLAMA_ORIGINS "https://geoeoeo217.github.io"
 ```
 
-Files: `live/js/vision.js` (camera AI), `live/js/genai.js` (Claude), `live/js/forecast.js`, `live/js/decision.js`, `live/js/app.js`; sample history in `live/data/history-sample.csv` (regenerate with `python3 live/tools/make_sample_history.py`).
+Files: `live/js/vision.js` (camera AI), `live/js/virtualcam.js` (virtual CCTV), `live/js/genai.js` (Claude), `live/js/forecast.js`, `live/js/decision.js`, `live/js/app.js`; sample history in `live/data/history-sample.csv` (regenerate with `python3 live/tools/make_sample_history.py`).
 
 ## Results (Monday 09:00 rush, 60% of passengers follow the lights)
 

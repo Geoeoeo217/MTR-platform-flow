@@ -5,6 +5,7 @@ import { Vision } from './vision.js';
 import { Forecaster } from './forecast.js';
 import { DecisionEngine } from './decision.js';
 import { GenAI, describeError } from './genai.js';
+import { VirtualCam } from './virtualcam.js';
 
 const $ = id => document.getElementById(id);
 const LS = { get: (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } },
@@ -50,10 +51,10 @@ async function init() {
 function buildControls() {
   $('srcCamera').onclick = startCamera;
   $('srcFile').onchange = e => { const f = e.target.files[0]; if (f) useFile(f); e.target.value = ''; };
-  $('srcSample').onclick = () => useImage('sample-frame.png', 'sample');
+  $('srcSample').onclick = startVirtual;
   $('srcManual').onclick = () => setSource('manual');
   $('tool').onchange = $('toolDoor').onchange = () => { vision.tool = { kind: $('tool').value, door: +$('toolDoor').value }; };
-  $('resetZones').onclick = () => { vision.defaultZones(cfg.doors); renderZoneList(); };
+  $('resetZones').onclick = () => { if (state.vcam && state.source === 'virtual') vision.zones = state.vcam.zones(); else vision.defaultZones(cfg.doors); renderZoneList(); };
   $('clearZones').onclick = () => { vision.zones = []; renderZoneList(); };
   $('btnArrive').onclick = () => setPhase('arriving');
   $('btnOpen').onclick = () => setPhase('open');
@@ -95,7 +96,27 @@ function ensureVideo() {
   if (vision.media.tagName === 'VIDEO') return vision.media;
   const v = document.createElement('video'); v.id = 'media'; v.playsInline = true; v.muted = true; swapMedia(v); return v;
 }
-function swapMedia(el) { const old = vision.media; if (old.srcObject) old.srcObject.getTracks().forEach(t => t.stop()); old.replaceWith(el); vision.media = el; }
+function swapMedia(el) {
+  const old = vision.media; if (old.srcObject) old.srcObject.getTracks().forEach(t => t.stop());
+  if (state.vcam && el !== state.vcam.canvas) { state.vcam.stop(); state.vcam = null; vision.minScore = 0.45; }
+  el.id = 'media'; old.replaceWith(el); vision.media = el;
+}
+
+// Virtual CCTV: a live 3D platform filmed from a wall camera, for testing without a real camera
+function startVirtual() {
+  if (state.vcam && state.vcam.doors !== cfg.doors) { state.vcam.stop(); state.vcam = null; }
+  if (!state.vcam) {
+    state.vcam = new VirtualCam(() => {
+      const map = f => Object.fromEntries(state.decisions.map(d => [d.door, f(d)]));
+      return { phase: state.phase, lights: map(d => d.light), onboard: map(d => d.onboard), forecastOff: map(d => d.forecastOff), capacity: cfg.capacity };
+    }, cfg.doors);
+    state.vcam.canvas.setAttribute('aria-label', 'Virtual CCTV view of the platform');
+  }
+  swapMedia(state.vcam.canvas); state.vcam.start(); window.vcam = state.vcam;   // handy for checking from the console
+  vision.minScore = 0.25;                      // 3D figures score lower than real people
+  vision.zones = state.vcam.zones(); renderZoneList();
+  setSource('virtual');
+}
 
 function setSource(s) {
   state.source = s;
@@ -103,7 +124,7 @@ function setSource(s) {
   if (s === 'manual') buildManualPanel();
   $('camEmpty').hidden = s !== 'none' && s !== 'manual';
   $('camEmpty').textContent = s === 'manual' ? 'Manual counts: type queue numbers in the table below.' : 'No camera yet';
-  $('status').textContent = { camera: 'Webcam running. Stand in the queue areas to test.', video: 'Playing the uploaded video.', image: 'Using a still frame. The GenAI model can count it; the detector looks for real people only.', manual: 'Manual mode: edit the queue numbers in the door table.' }[s] || '';
+  $('status').textContent = { camera: 'Webcam running. Stand in the queue areas to test.', video: 'Playing the uploaded video.', image: 'Using a still frame.', virtual: 'Virtual CCTV running: a 3D platform filmed from a wall camera. The camera AI counts it like a real feed.', manual: 'Manual mode: edit the queue numbers in the door table.' }[s] || '';
 }
 
 // ---------------- main loop: camera → counts → decision → lights ----------------

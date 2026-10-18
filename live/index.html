@@ -35,7 +35,7 @@ button.primary{background:var(--accent);color:#0b1110;border-color:var(--accent)
 button:focus-visible,select:focus-visible,input:focus-visible,label.file:focus-within{outline:2px solid var(--accent);outline-offset:2px}
 label.file input{position:absolute;opacity:0;width:1px;height:1px}
 .cam{position:relative;aspect-ratio:16/9;background:#070b0a;border-radius:6px;overflow:hidden}
-.cam video,.cam img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.cam video,.cam img,.cam > canvas#media{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
 .cam canvas{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair;touch-action:none}
 .cam .empty{position:absolute;inset:0;display:grid;place-content:center;color:var(--muted);font-size:.95rem;text-align:center;padding:16px}
 .small{font-size:.8rem;color:var(--muted)}
@@ -94,7 +94,7 @@ code{font-family:var(--f-mono);font-size:.85em;background:var(--panel2);padding:
       <div class="bar">
         <button type="button" class="primary" id="srcCamera">Start webcam</button>
         <label class="file">Upload video or photo<input type="file" id="srcFile" accept="video/*,image/*"></label>
-        <button type="button" id="srcSample">3D render (Claude test)</button>
+        <button type="button" id="srcSample">Virtual CCTV (3D)</button>
         <button type="button" id="srcManual">Manual counts</button>
       </div>
       <div class="cam"><video id="media" playsinline muted></video><canvas id="overlay" aria-label="Detections and counting areas"></canvas><div class="empty" id="camEmpty">No camera yet</div></div>
@@ -178,6 +178,7 @@ code{font-family:var(--f-mono);font-size:.85em;background:var(--panel2);padding:
   </form>
 </dialog>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
 <script type="module" src="js/app.js"></script>

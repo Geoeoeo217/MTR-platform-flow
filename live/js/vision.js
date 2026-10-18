@@ -5,6 +5,16 @@
 //   exit line (door N)   → people crossing the line downward, i.e. stepping off the train onto the platform
 // The train is assumed to be at the top of the image, so "downward" means leaving the train.
 
+// Is point (x, y) inside polygon pts? (ray casting)
+function inPoly(x, y, pts) {
+  let inside = false;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    const a = pts[i], b = pts[j];
+    if ((a.y > y) !== (b.y > y) && x < (b.x - a.x) * (y - a.y) / (b.y - a.y) + a.x) inside = !inside;
+  }
+  return inside;
+}
+
 const KIND_COLOR = { queue: '#7ea2ee', car: '#f2bd2c', exit: '#c58cff' };
 
 export class Vision {
@@ -25,16 +35,19 @@ export class Vision {
   }
 
   async loadModel() {
-    this.model = await cocoSsd.load({ base: 'lite_mobilenet_v2' });
+    this.model = await cocoSsd.load({ base: this.base || 'mobilenet_v2' });
   }
 
   get ready() {
     const m = this.media;
-    return !!this.model && (m.tagName === 'IMG' ? m.complete && m.naturalWidth > 0 : m.readyState >= 2 && m.videoWidth > 0);
+    if (!this.model) return false;
+    if (m.tagName === 'CANVAS') return m.width > 0;
+    return m.tagName === 'IMG' ? m.complete && m.naturalWidth > 0 : m.readyState >= 2 && m.videoWidth > 0;
   }
 
   size() {
     const m = this.media;
+    if (m.tagName === 'CANVAS') return [m.width, m.height];
     return m.tagName === 'IMG' ? [m.naturalWidth, m.naturalHeight] : [m.videoWidth, m.videoHeight];
   }
 
@@ -60,7 +73,7 @@ export class Vision {
       if (z.kind === 'exit') continue;
       const n = this.persons.filter(p => {
         const px = p.x + p.w / 2, py = z.kind === 'queue' ? p.y + p.h : p.y + p.h / 2;   // feet for queues, centre for cars
-        return px >= z.x && px <= z.x + z.w && py >= z.y && py <= z.y + z.h;
+        return z.pts ? inPoly(px, py, z.pts) : px >= z.x && px <= z.x + z.w && py >= z.y && py <= z.y + z.h;
       }).length;
       const bucket = z.kind === 'queue' ? queue : car;
       bucket[z.door] = (bucket[z.door] ?? 0) + n;
@@ -72,7 +85,7 @@ export class Vision {
 
   // Nearest-centroid tracker so the same person is followed between frames
   _track() {
-    const pts = this.persons.map(p => ({ cx: p.x + p.w / 2, cy: p.y + p.h * 0.8 }));
+    const pts = this.persons.map(p => ({ cx: p.x + p.w / 2, cy: p.y + p.h * 0.97 }));   // follow the feet
     const used = new Set();
     for (const t of this.tracks) {
       let best = -1, bd = 0.12;
@@ -111,8 +124,10 @@ export class Vision {
       const label = z.kind === 'queue' ? `QUEUE ${z.door}A` : `CAR ${z.door}`;
       labels.push(label);
       g.strokeStyle = g.fillStyle = KIND_COLOR[z.kind];
-      g.strokeRect(z.x * c.width, z.y * c.height, z.w * c.width, z.h * c.height);
-      g.fillText(label, z.x * c.width + 6, z.y * c.height + Math.max(16, c.width / 45));
+      if (z.pts) { g.beginPath(); z.pts.forEach((p, i) => i ? g.lineTo(p.x * c.width, p.y * c.height) : g.moveTo(p.x * c.width, p.y * c.height)); g.closePath(); g.stroke(); }
+      else g.strokeRect(z.x * c.width, z.y * c.height, z.w * c.width, z.h * c.height);
+      const lx = z.pts ? Math.min(...z.pts.map(p => p.x)) : z.x, ly = z.pts ? Math.min(...z.pts.map(p => p.y)) : z.y;
+      g.fillText(label, lx * c.width + 6, ly * c.height + Math.max(16, c.width / 45));
     }
     return { data: c.toDataURL('image/jpeg', 0.82).split(',')[1], labels };
   }
@@ -123,24 +138,30 @@ export class Vision {
     const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, r.width, r.height);
     const box = this._contentBox(r.width, r.height);
     const X = v => box.x + v * box.w, Y = v => box.y + v * box.h;
-    g.font = '600 12px "IBM Plex Mono", monospace'; g.lineWidth = 2;
+    g.font = '600 13px "IBM Plex Mono", monospace'; g.lineWidth = 2;
     const c = this.counts();
     for (const z of this.zones) {
       g.strokeStyle = KIND_COLOR[z.kind]; g.fillStyle = KIND_COLOR[z.kind];
       if (z.kind === 'exit') {
         g.setLineDash([8, 6]); g.beginPath(); g.moveTo(X(z.x1), Y(z.y1)); g.lineTo(X(z.x2), Y(z.y2)); g.stroke(); g.setLineDash([]);
-        g.fillText(`EXIT ${z.door}: ${c.exits[z.door] ?? 0} off`, X(Math.min(z.x1, z.x2)), Y(Math.min(z.y1, z.y2)) - 6);
+        if (this.counting) g.fillText(`↓${c.exits[z.door] ?? 0} off`, X(Math.max(z.x1, z.x2)) + 4, Y(Math.max(z.y1, z.y2)));
       } else {
-        g.globalAlpha = 0.12; g.fillRect(X(z.x), Y(z.y), z.w * box.w, z.h * box.h); g.globalAlpha = 1;
-        g.strokeRect(X(z.x), Y(z.y), z.w * box.w, z.h * box.h);
-        const n = (z.kind === 'queue' ? c.queue : c.car)[z.door] ?? 0;
-        g.fillText(`${z.kind === 'queue' ? 'QUEUE ' + z.door + 'A' : 'CAR ' + z.door}: ${n}`, X(z.x) + 6, Y(z.y) + 16);
+        const n = (z.kind === 'queue' ? c.queue : c.car)[z.door] ?? 0, text = `${z.kind === 'queue' ? z.door + 'A' : 'car ' + z.door}: ${n}`;
+        if (z.pts) {
+          g.beginPath(); z.pts.forEach((p, i) => i ? g.lineTo(X(p.x), Y(p.y)) : g.moveTo(X(p.x), Y(p.y))); g.closePath();
+          g.globalAlpha = 0.14; g.fill(); g.globalAlpha = 1; g.stroke();
+          const bottom = z.pts.reduce((a, p) => p.y > a.y ? p : a); g.fillText(text, X(bottom.x) + 4, Y(bottom.y) + 14);
+        } else {
+          g.globalAlpha = 0.12; g.fillRect(X(z.x), Y(z.y), z.w * box.w, z.h * box.h); g.globalAlpha = 1;
+          g.strokeRect(X(z.x), Y(z.y), z.w * box.w, z.h * box.h);
+          g.fillText(text, X(z.x) + 6, Y(z.y) + 16);
+        }
       }
     }
     g.strokeStyle = '#2fd27a'; g.fillStyle = '#2fd27a';
     for (const p of this.persons) {
       g.strokeRect(X(p.x), Y(p.y), p.w * box.w, p.h * box.h);
-      g.fillText(`person ${(p.score * 100) | 0}%`, X(p.x) + 2, Y(p.y) - 4);
+      g.fillText(`${(p.score * 100) | 0}%`, X(p.x) + 2, Y(p.y) - 4);
     }
     if (this.drag?.cur) {
       const d = this.drag; g.strokeStyle = KIND_COLOR[this.tool.kind]; g.setLineDash([4, 4]);
