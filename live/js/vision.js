@@ -20,6 +20,22 @@ function mergeBoxes(boxes) {
   return kept;
 }
 
+// Perspective map from a four-sided area in the image (front-left, front-right, back-right, back-left) to a unit
+// square on the floor: x across the queue, y from the front edge (0) to the back edge (1)
+function homography(pts) {
+  const dst = [[0, 0], [1, 0], [1, 1], [0, 1]], A = [], b = [];
+  pts.forEach((p, i) => { const [u, w] = dst[i];
+    A.push([p.x, p.y, 1, 0, 0, 0, -u * p.x, -u * p.y]); b.push(u);
+    A.push([0, 0, 0, p.x, p.y, 1, -w * p.x, -w * p.y]); b.push(w); });
+  for (let c = 0; c < 8; c++) {                                  // Gaussian elimination
+    let piv = c; for (let r = c + 1; r < 8; r++) if (Math.abs(A[r][c]) > Math.abs(A[piv][c])) piv = r;
+    [A[c], A[piv]] = [A[piv], A[c]]; [b[c], b[piv]] = [b[piv], b[c]];
+    for (let r = 0; r < 8; r++) if (r !== c) { const f = A[r][c] / A[c][c]; for (let k = c; k < 8; k++) A[r][k] -= f * A[c][k]; b[r] -= f * b[c]; }
+  }
+  return b.map((v, i) => v / A[i][i]);
+}
+function applyH(h, x, y) { const d = h[6] * x + h[7] * y + 1; return [(h[0] * x + h[1] * y + h[2]) / d, (h[3] * x + h[4] * y + h[5]) / d]; }
+
 // Is point (x, y) inside polygon pts? (ray casting)
 function inPoly(x, y, pts) {
   let inside = false;
@@ -44,6 +60,7 @@ export class Vision {
     this.counting = false;         // exit lines only count while doors are open
     this.minScore = 0.45;
     this.detail = true;            // also scan each half of the frame (finds far and edge people; about 3x the work)
+    this.tiles = null;             // set by a multi-camera feed: the part of the image each camera fills
     this.tool = { kind: 'queue', door: 1 };
     this.drag = null;
     this.lastMs = 0;
@@ -82,10 +99,11 @@ export class Vision {
     const found = [];
     const add = (preds, x0, y0, sw, sh) => { for (const p of preds) if (p.class === 'person')
       found.push({ x: x0 + p.bbox[0] / sw, y: y0 + p.bbox[1] / sh, w: p.bbox[2] / sw, h: p.bbox[3] / sh, score: p.score }); };
-    add(await this.model.detect(this.media, 40, this.minScore), 0, 0, W, H);
-    if (this.detail) {
+    // A multi-camera feed (several camera images side by side) is scanned one camera at a time instead
+    if (!this.tiles) add(await this.model.detect(this.media, 40, this.minScore), 0, 0, W, H);
+    if (this.detail || this.tiles) {
       const c = this._tile || (this._tile = document.createElement('canvas')), g = c.getContext('2d');
-      for (const [fx0, fx1] of [[0, 0.56], [0.44, 1]]) {
+      for (const [fx0, fx1] of this.tiles || [[0, 0.56], [0.44, 1]]) {
         const sx = fx0 * W, sw = (fx1 - fx0) * W;
         c.width = Math.round(sw); c.height = H;
         g.drawImage(this.media, sx, 0, sw, H, 0, 0, c.width, c.height);
@@ -100,23 +118,44 @@ export class Vision {
   }
 
   // People per area, plus the detector's average confidence for the people it found in each area
+  // People per area, the detector's average confidence per queue, and (for queue areas that know their layout)
+  // an estimate from the queue's length. People standing in a line hide the ones in front of them, but the last
+  // person in line is nearest the camera and almost always visible: if the tail is in row r, the queue holds about
+  // perRow × r people plus the ones seen in that last row.
   counts() {
-    const queue = {}, car = {}, score = {};
+    const queue = {}, car = {}, score = {}, seen = {}, method = {};
     for (const z of this.zones) {
       if (z.kind === 'exit') continue;
       const inside = this.persons.filter(p => {
         const px = p.x + p.w / 2, py = z.kind === 'queue' ? p.y + p.h : p.y + p.h / 2;   // feet for queues, centre for cars
         return z.pts ? inPoly(px, py, z.pts) : px >= z.x && px <= z.x + z.w && py >= z.y && py <= z.y + z.h;
       });
-      const bucket = z.kind === 'queue' ? queue : car;
-      bucket[z.door] = (bucket[z.door] ?? 0) + inside.length;
-      if (z.kind === 'queue' && inside.length) score[z.door] = inside.reduce((s, p) => s + p.score, 0) / inside.length;
+      if (z.kind === 'car') { car[z.door] = (car[z.door] ?? 0) + inside.length; continue; }
+      let n = inside.length; seen[z.door] = (seen[z.door] ?? 0) + n; method[z.door] = 'people seen';
+      if (inside.length) score[z.door] = inside.reduce((s, p) => s + p.score, 0) / inside.length;
+      const m = z.queueModel;
+      if (m && z.pts && inside.length) {
+        const H = z._h || (z._h = homography(z.pts));
+        const rows = inside.map(p => { const [, depth] = applyH(H, p.x + p.w / 2, p.y + p.h); return Math.max(0, Math.round((depth * m.depthM - m.startM) / m.gapM)); });
+        const tail = Math.max(...rows), inTail = rows.filter(r => r === tail).length;
+        const est = m.perRow * tail + Math.min(m.perRow, inTail);
+        if (est > n) { n = est; method[z.door] = 'queue length'; }
+      }
+      queue[z.door] = (queue[z.door] ?? 0) + n;
+    }
+    // Smooth each door over its last 3 readings (about 1 s): one missed or extra detection in a single frame
+    // shouldn't flip a light
+    const hist = this._qhist || (this._qhist = {});
+    for (const d of Object.keys(queue)) {
+      const h = hist[d] || (hist[d] = []); h.push(queue[d]); if (h.length > 3) h.shift();
+      queue[d] = [...h].sort((a, b) => a - b)[Math.floor(h.length / 2)];
     }
     const mean = this.persons.length ? this.persons.reduce((s, p) => s + p.score, 0) / this.persons.length : null;
-    return { queue, car, score, mean, exits: { ...this.exits }, people: this.persons.length };
+    return { queue, car, score, seen, method, mean, exits: { ...this.exits }, people: this.persons.length };
   }
 
   resetExits() { this.exits = {}; for (const t of this.tracks) t.side = {}; }
+  resetSmoothing() { this._qhist = {}; }
 
   // Nearest-centroid tracker so the same person is followed between frames
   _track() {
@@ -127,7 +166,7 @@ export class Vision {
       pts.forEach((p, i) => { if (used.has(i)) return; const d = Math.hypot(p.cx - t.cx, p.cy - t.cy); if (d < bd) { bd = d; best = i; } });
       if (best >= 0) { used.add(best); this._move(t, pts[best]); t.missed = 0; } else t.missed++;
     }
-    pts.forEach((p, i) => { if (!used.has(i)) this.tracks.push({ id: this.nextId++, cx: p.cx, cy: p.cy, side: {}, missed: 0 }); });
+    pts.forEach((p, i) => { if (used.has(i)) return; const t = { id: this.nextId++, cx: p.cx, cy: p.cy, side: {}, missed: 0 }; this._move(t, p); this.tracks.push(t); });
     this.tracks = this.tracks.filter(t => t.missed < 8);
   }
 
@@ -137,8 +176,11 @@ export class Vision {
       const minX = Math.min(z.x1, z.x2) - 0.02, maxX = Math.max(z.x1, z.x2) + 0.02;
       if (p.cx < minX || p.cx > maxX) continue;
       const lineY = z.y1 + (z.y2 - z.y1) * ((p.cx - z.x1) / ((z.x2 - z.x1) || 1e-6));
-      const side = p.cy > lineY ? 1 : -1;                 // 1 = below the line (platform side)
-      const prev = t.side[zi];
+      // 1 = below the line (platform side). A small dead band around the line keeps a person standing near it
+      // from being counted when their box wobbles
+      const prev = t.side[zi], band = 0.012;
+      const side = p.cy > lineY + band ? 1 : p.cy < lineY - band ? -1 : prev;
+      if (side === undefined) continue;
       if (prev === -1 && side === 1 && this.counting) this.exits[z.door] = (this.exits[z.door] ?? 0) + 1;
       t.side[zi] = side;
     }

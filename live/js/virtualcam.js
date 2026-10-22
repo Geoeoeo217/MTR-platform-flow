@@ -1,4 +1,5 @@
-// Virtual CCTV camera: a live 3D platform filmed from a wall-mounted camera angle, used as a camera feed
+// Virtual CCTV: a live 3D platform filmed by one wall-mounted camera per two doors (shown side by side, like a
+// CCTV monitor wall), used as a camera feed
 // when no real camera is available. People walk in, queue at the doors (following the lights like real
 // passengers mostly do), get off and on the train in step with the system's train cycle.
 // The camera AI and the GenAI model read these frames exactly as they would read a real CCTV feed;
@@ -15,7 +16,8 @@ export class VirtualCam {
     this.getState = getState;    // () => ({ phase, lights: {door: 'g'|'y'|'r'}, onboard: {door: n}, forecastOff: {door: n}, capacity })
     this.doors = doors;
     this.canvas = document.createElement('canvas');
-    this.canvas.width = 1280; this.canvas.height = 720;
+    this.cams = Math.ceil(doors / 2);                       // one camera covers two doors: people look bigger and overlap less
+    this.canvas.width = 1280 * this.cams; this.canvas.height = 720;
     this.people = []; this.lastPhase = null; this.spawnT = 0; this.trainX = -60; this.boardAt = 0;
     this._build();
   }
@@ -24,16 +26,21 @@ export class VirtualCam {
 
   _build() {
     const r = this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true, preserveDrawingBuffer: true });
-    r.setPixelRatio(1); r.setSize(1280, 720, false);
+    r.setPixelRatio(1); r.setSize(1280 * this.cams, 720, false); r.setScissorTest(true);
     const s = this.scene = new THREE.Scene();
     s.background = new THREE.Color(0xc9cfcc);
     s.fog = new THREE.Fog(0xc9cfcc, 30, 60);
-    // Camera mounted high on the back wall, looking along and across the platform
-    // Chosen so every door's queue area is inside the frame with a margin, with the far doors as large as possible
-    this.camera = new THREE.PerspectiveCamera(50, 16 / 9, 0.1, 100);
-    this.camera.position.set(-4, 6, 12);
-    this.camera.lookAt(-1, 0, 1.6);
-    this.camera.updateMatrixWorld();
+    // One camera per pair of doors, 6 m up, looking down at about 50 degrees, like a queue-counting CCTV.
+    // The steeper angle cuts how much people in the same line hide each other (the detector drops heavily
+    // overlapping boxes as duplicates); both queue areas still fit and the farthest person is about 157 px tall.
+    this.cameras = [];
+    for (let k = 0; k < this.cams; k++) {
+      const a = this.doorX(2 * k + 1), b = this.doorX(Math.min(this.doors, 2 * k + 2)), cx = (a + b) / 2;
+      const cam = new THREE.PerspectiveCamera(40, 16 / 9, 0.1, 100);
+      cam.position.set(cx, 6, 7); cam.lookAt(cx, 0, 1.6); cam.updateMatrixWorld();
+      this.cameras.push(cam);
+    }
+    this.camera = this.cameras[0];
     s.add(new THREE.HemisphereLight(0xffffff, 0x8a8f8c, 0.9));
     const sun = new THREE.DirectionalLight(0xffffff, 0.55); sun.position.set(-4, 10, 8); s.add(sun);
 
@@ -122,10 +129,10 @@ export class VirtualCam {
       for (const pn of this.doorPanels) pn.open = true;
       // People getting off: the system's forecast is only a forecast, so the real number varies around it
       for (let d = 1; d <= this.doors; d++) {
-        const onboard = st.onboard[d] ?? 0, fc = st.forecastOff[d] ?? 0;
+        const onboard = st.onboard[d] ?? 0, fc = st.trueOff?.[d] ?? st.forecastOff[d] ?? 0;
         const n = Math.min(onboard, 4, Math.max(0, Math.round(fc * (0.6 + Math.random() * 0.8) + (Math.random() < 0.35 ? 1 : 0))));
         for (let k = 0; k < n; k++) {
-          const p = this._person(); p.state = 'alight'; p.door = d; p.delay = 0.6 + k * 1.1;
+          const p = this._person(); p.state = 'alight'; p.door = d; p.delay = 0.6 + k * 1.6;
           const x = this.doorX(d) + (Math.random() - 0.5) * 0.4; p.g.position.set(x, 0, -1.6); p.g.visible = false;
           p.path = [new THREE.Vector3(x, 0, 0.4), new THREE.Vector3(x + (Math.random() < 0.5 ? -1.3 : 1.3), 0, 2.2), new THREE.Vector3(this.doorX(this.doors) + DOOR_GAP + 1, 0, 8.5)];
           this.people.push(p);
@@ -181,7 +188,7 @@ export class VirtualCam {
     for (let d = 1; d <= this.doors; d++) this.people.filter(p => p.door === d && p.state === 'queue').sort((a, b) => a.g.position.z - b.g.position.z)
       .forEach((p, k) => { const s = this._slot(d, k); if (p.g.position.distanceTo(s) > 0.05) { p.state = 'toQueue'; p.path = [s]; } });
     this.people = this.people.filter(p => !p.dead);
-    this.renderer.render(this.scene, this.camera);
+    this.cameras.forEach((cam, k) => { this.renderer.setViewport(k * 1280, 0, 1280, 720); this.renderer.setScissor(k * 1280, 0, 1280, 720); this.renderer.render(this.scene, cam); });
   }
 
   // A steady 20 fps timer (not requestAnimationFrame) so the feed keeps moving like a real camera
@@ -193,17 +200,22 @@ export class VirtualCam {
   }
   stop() { this.running = false; clearInterval(this.timer); this.timer = null; }
 
-  // Counting areas that match this camera's view: each door's queue area, and an exit line just inside each door
+  // Which part of the image each camera fills (0–1 of the width), so the camera AI can scan each camera separately
+  tiles() { return this.cameras.map((_, k) => [k / this.cams, (k + 1) / this.cams]); }
+
+  // Counting areas that match each camera's view: each door's queue area, and an exit line 1.3 m in front of each door.
+  // Each door is drawn on the camera that covers it.
   zones() {
-    this.camera.updateMatrixWorld();
-    const proj = (x, z) => { const v = new THREE.Vector3(x, 0, z).project(this.camera); return { x: (v.x + 1) / 2, y: (1 - v.y) / 2 }; };
     const out = [];
     for (let d = 1; d <= this.doors; d++) {
+      const k = Math.floor((d - 1) / 2), cam = this.cameras[k]; cam.updateMatrixWorld();
+      const proj = (x, z) => { const v = new THREE.Vector3(x, 0, z).project(cam); return { x: (k + (v.x + 1) / 2) / this.cams, y: (1 - v.y) / 2 }; };
       // The queue area is a rectangle on the floor, which the camera sees as a slanted four-sided shape
       const x = this.doorX(d), pts = [proj(x - 1.1, 0.5), proj(x + 1.1, 0.5), proj(x + 1.1, 3.6), proj(x - 1.1, 3.6)];
       const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
-      out.push({ kind: 'queue', door: d, pts, x: Math.min(...xs), y: Math.min(...ys), w: Math.max(...xs) - Math.min(...xs), h: Math.max(...ys) - Math.min(...ys) });
-      const a = proj(x - 0.9, 0.55), b = proj(x + 0.9, 0.55);
+      // queueModel: the area is 3.1 m deep, the first row stands 0.4 m from the door edge, rows are 0.8 m apart, 2 per row
+      out.push({ kind: 'queue', door: d, pts, queueModel: { depthM: 3.1, startM: 0.4, gapM: 0.8, perRow: 2 }, x: Math.min(...xs), y: Math.min(...ys), w: Math.max(...xs) - Math.min(...xs), h: Math.max(...ys) - Math.min(...ys) });
+      const a = proj(x - 1.1, 1.3), b = proj(x + 1.1, 1.3);   // between the first and second queue rows
       out.push({ kind: 'exit', door: d, x1: a.x, y1: a.y, x2: b.x, y2: b.y });
     }
     return out;

@@ -29,7 +29,7 @@ The simulations show the idea; `live/` is the working system, running in the bro
 | Step | What happens | Where the numbers come from |
 |---|---|---|
 | 1. Input | Webcam, an uploaded video or photo, the **Virtual CCTV** (simulated 3D video), a **demo scenario** (simulated counts) or **manual entry** | The badge on the input card always says which, and whether the data is real, simulated or typed |
-| 2. Counts | People queuing at each door, and people on board each car | Camera inputs: COCO-SSD person detection (TensorFlow.js), with confidence per door. Scenarios and manual entry: the numbers shown, editable. On board: a car camera area, the entered numbers, or a clearly labelled simulated train-load feed |
+| 2. Counts | People queuing at each door, and people on board each car | Camera inputs: COCO-SSD person detection (TensorFlow.js), with confidence per door. The virtual CCTV uses one camera per two doors, looking down at about 50°. Where people in a line hide each other, the count also uses the queue's length (how far back the last person stands), and each door is smoothed over its last 3 readings. Scenarios and manual entry: the numbers shown, editable. On board: a car camera area, the entered numbers, or a clearly labelled simulated train-load feed |
 | 3. Capacity | room = car capacity − on board + forecast getting off | The table shows the working for every door, e.g. `6 − 3 + 0` |
 | 4. Recommendation | The green door with the most spare space (room − queue); amber if no door is green; “all doors full” if none | The card explains why, and which doors to avoid |
 | 5. Guidance | Tunnel sign, door lights, and an optional GenAI announcement in English, 繁體中文 and 简体中文 | The sign uses rule-based text unless a GenAI announcement for the current lights exists; the badge says which |
@@ -38,7 +38,7 @@ The simulations show the idea; `live/` is the working system, running in the bro
 
 **Two scenarios** (simulated data): A, a morning rush with the crowd by the stairs at 1A–2A, and B, an evening with full middle cars and the crowd at 3A–4A. The recommendation switches from 4A to 1A. The **before/after** panel estimates the effect if a set share of people (default 60%, in Settings › Advanced) follow the lights. It is an estimate under that assumption, not a measurement.
 
-**Forecast of people getting off.** A transparent baseline: the share of riders who got off at each door for the same weekday and 15-minute slot, averaged over the latest 2 weeks of history (4 weeks of sample data standing in for MTR records). When an exit line on a real camera counts people getting off, that train is added and today’s correction updates. Counts from the virtual CCTV are kept for the session only. Nothing else is trained.
+**Forecast of people getting off.** A transparent baseline: the share of riders who got off at each door for the same weekday and 15-minute slot, averaged over the latest 2 weeks of history (4 weeks of sample data standing in for MTR records). When an exit line counts people getting off, that train is added to the history for its weekday and 15-minute slot, saved on the device, and today’s correction updates. So a train counted on Thursday at 09:00 shapes the forecast for the next two Thursdays at 09:00, and the forecast relies more on real counts the longer the system runs. Real-video and virtual-CCTV counts are saved separately (the latter labelled simulated) and can be cleared. *Forecast details* shows, per door, how many sample, real and simulated records the current slot uses. Nothing else is trained.
 
 **GenAI.** Optional, chosen in Settings: Ollama (free, local), Claude (your own API key, used only from your browser) or off. With Claude, a frame count can back up the detector in dense crowds; a small local model’s count is shown for comparison only. Without GenAI, everything except the announcement still works.
 
@@ -118,7 +118,7 @@ Only 4 new devices are needed. Everything else comes from systems MTR already ru
 
 - All data is simulated. A pilot would add the 4 devices above and reuse MTR's train load sensors, CCTV and gate data.
 - Passengers without guidance are modelled as queuing near the tunnel they came out of. Real behaviour should be measured in a pilot.
-- The forecast learns per train within one session. The production design stores data and averages each day-and-hour slot over recent weeks.
+- The forecast saves each counted train in the browser on one device. A deployment would keep the same per-slot history in a station database, shared by all cameras.
 - The system advises passengers and staff. It does not replace staff, platform screen doors or any safety system.
 
 ## Project layout

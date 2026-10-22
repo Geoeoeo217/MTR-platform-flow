@@ -149,7 +149,7 @@ function ensureVideo() {
 function stopMedia() { const m = vision.media; if (m.srcObject) { m.srcObject.getTracks().forEach(t => t.stop()); m.srcObject = null; } if (state.vcam) { state.vcam.stop(); } }
 function swapMedia(el) {
   const old = vision.media; if (old.srcObject) old.srcObject.getTracks().forEach(t => t.stop());
-  if (state.vcam && el !== state.vcam.canvas) { state.vcam.stop(); vision.minScore = 0.45; }
+  if (state.vcam && el !== state.vcam.canvas) { state.vcam.stop(); vision.minScore = 0.45; vision.tiles = null; $('camBox').style.aspectRatio = ''; }
   el.id = 'media'; old.replaceWith(el); vision.media = el;
 }
 
@@ -159,18 +159,23 @@ function startVirtual() {
   if (!state.vcam) {
     state.vcam = new VirtualCam(() => {
       const map = f => Object.fromEntries(state.decisions.map(d => [d.door, f(d)]));
-      return { phase: state.phase, lights: map(d => d.light), onboard: map(d => d.onboard), forecastOff: map(d => d.forecastOff), capacity: cfg.capacity };
+      return { phase: state.phase, lights: map(d => d.light), onboard: map(d => d.onboard), forecastOff: map(d => d.forecastOff), capacity: cfg.capacity,
+        // How many really get off in the simulation comes from the sample history, not from the learned forecast,
+        // so a miscount can't feed back into the simulated truth
+        trueOff: map(d => Math.round(forecaster.share(d.door, scenarioTime(), ['sample']).share * d.onboard)) };
     }, cfg.doors);
     state.vcam.canvas.setAttribute('aria-label', 'Virtual CCTV view of the platform (simulated)');
   }
   swapMedia(state.vcam.canvas); state.vcam.start();
+  vision.tiles = state.vcam.tiles();           // scan each camera of the feed separately
+  $('camBox').style.aspectRatio = `${state.vcam.canvas.width} / ${state.vcam.canvas.height}`;
   vision.minScore = 0.25;                      // 3D figures score lower than real people
   vision.zones = state.vcam.zones(); renderZoneList();
   setSource('virtual');
 }
 
 function setSource(s) {
-  state.source = s; state.liveSince = Date.now(); state.ai = null; engine.reset();   // new input: no carried-over light hold
+  state.source = s; state.liveSince = Date.now(); state.ai = null; engine.reset(); vision.resetSmoothing();   // new input: no carried-over light hold
   const src = SOURCES[s];
   $('srcBadge').className = 'badge ' + src.badge; $('srcBadge').textContent = src.label;
   const entry = s === 'manual' || s === 'scenario';
@@ -228,7 +233,7 @@ function update(counts, live) {
     else if (live) {
       const det = counts.queue[d] ?? 0; aiQ = aiCount(`QUEUE ${d}A`);
       queue = aiQ !== undefined && trustAI ? Math.max(det, aiQ) : det;
-      qSource = aiQ !== undefined && trustAI && aiQ > det ? 'GenAI vision' : 'camera AI';
+      qSource = aiQ !== undefined && trustAI && aiQ > det ? 'GenAI vision' : counts.method?.[d] === 'queue length' ? `camera AI · queue length (${counts.seen[d]} seen)` : 'camera AI';
       conf = counts.score[d] ?? null;
       if (!vision.zones.some(z => z.kind === 'queue' && z.door === d)) flags.push(`No queue area drawn for ${d}A, so its count is 0.`);
       const lowAt = state.source === 'virtual' ? 0.4 : 0.55;   // simulated 3D figures always score lower than real people
@@ -317,7 +322,7 @@ function tickTrain() {
 function recordTrain() {
   const live = ['camera', 'video', 'virtual'].includes(state.source);
   if (!live) return;
-  const source = state.source === 'virtual' ? 'simulated' : 'observed';    // simulated-video counts are kept for this session only
+  const source = state.source === 'virtual' ? 'simulated' : 'observed';    // saved separately and labelled
   for (let d = 1; d <= cfg.doors; d++) {
     if (!vision.zones.some(z => z.kind === 'exit' && z.door === d)) continue;
     forecaster.observe(d, state.onboardSnapshot[d] ?? 0, vision.exits[d] ?? 0, state.forecastSnapshot[d] ?? 0, new Date(), source);
@@ -408,8 +413,16 @@ function render(counts, live) {
     rec.className = 'rec none';
     rec.innerHTML = `<span class="lbl">Recommendation</span><b class="big">All doors full</b><p>Every door has more people queuing than space on the next train. Ask passengers to spread out and wait for the following train.</p>`;
   }
-  $('flags').hidden = !warn;
-  if (warn) $('flags').innerHTML = `<b>Check before relying on this recommendation:</b><ul>${state.flags.map(f => `<li>${escapeHtml(f)}</li>`).join('')}</ul>`;
+  // The box keeps its place so the page below doesn't jump, and a warning stays up 8 s after it last appeared,
+  // so a flag that flickers frame to frame reads as one steady warning
+  const now = Date.now(), seen = state.flagSeen || (state.flagSeen = new Map());
+  for (const f of state.flags) seen.set(f.split(':')[0] + '|' + f.replace(/[\d.]+/g, '#'), { text: f, at: now });
+  for (const [k, v] of seen) if (now - v.at > 8000) seen.delete(k);
+  const shown = [...seen.values()].map(v => v.text);
+  $('flags').hidden = false;
+  $('flags').classList.toggle('ok', !shown.length);
+  const html = shown.length ? `<b>Check before relying on this recommendation:</b><ul>${shown.map(f => `<li>${escapeHtml(f)}</li>`).join('')}</ul>` : '<b>No warnings.</b> The counts look consistent.';
+  if ($('flags').innerHTML !== html) $('flags').innerHTML = html;
 
   // Signs and lights
   const mid = (cfg.doors + 1) / 2;
@@ -482,8 +495,13 @@ function renderLearning() {
   const log = forecaster.log.slice(0, 12);
   $('learnTable').innerHTML = `<thead><tr><th>Time</th><th>Door</th><th>Forecast</th><th>Counted</th><th>From</th></tr></thead><tbody>${log.map(r =>
     `<tr><td>${r.time.toLocaleTimeString()}</td><td>${r.door}A</td><td>${r.forecast}</td><td>${r.actual}</td><td>${r.source === 'observed' ? 'exit line, real video' : 'exit line, simulated video'}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">No trains counted yet. Exit lines on a camera or the virtual CCTV count people getting off when the doors open.</td></tr>'}</tbody>`;
-  $('learnStats').textContent = `${forecaster.rows.length.toLocaleString()} history records (sample data) · ${forecaster.observedCount} trains counted from real video on this device`;
-  $('learnBasis').textContent = state.decisions.map(d => `${d.label}: ${d.f.basis}, ${d.f.n} records, today’s correction ×${d.f.corr.toFixed(2)}`).join(' · ');
+  const sample = forecaster.rows.length - forecaster.observedCount - forecaster.simulatedCount;
+  $('learnStats').textContent = `${sample.toLocaleString()} sample history records · saved on this device: ${forecaster.observedCount} door counts from real video, ${forecaster.simulatedCount} from the virtual CCTV (simulated)`;
+  const when = scenarioTime(), day = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  const st = forecaster.slotStats(1, when), hh = n => String(n).padStart(2, '0');
+  $('learnSlot').textContent = `This time slot: ${day[st.weekday]} ${hh(Math.floor(st.slot / 60))}:${hh(st.slot % 60)} (±15 min). Trains counted now are saved here and used for this slot over the next 2 weeks.`;
+  $('learnBasis').innerHTML = state.decisions.map(d => { const s = forecaster.slotStats(d.door, when);
+    return `<li><b>${d.label}</b>: ${s.sample} sample + ${s.observed} real + ${s.simulated} simulated records for this slot · forecast ${(d.f.share * 100).toFixed(0)}% get off (${d.f.basis}, ${d.f.n} records used) · today’s correction ×${d.f.corr.toFixed(2)}</li>`; }).join('');
 }
 
 // ---------------- settings ----------------

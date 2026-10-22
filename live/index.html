@@ -93,6 +93,8 @@ code{font-family:var(--f-mono);font-size:.85em;background:var(--panel2);padding:
 .rec b.big{font-family:var(--f-display);font-size:2rem;line-height:1}
 .flag{background:rgba(242,189,44,.12);border:1px solid var(--caution);color:var(--ink);border-radius:6px;padding:8px 10px;font-size:.85rem}
 .flag ul{margin:4px 0 0;padding-left:18px}
+.flag.ok{background:transparent;border-color:var(--line, #2a3633);color:var(--muted, #a9bab5)}
+#flags{min-height:4.6em}
 .bars{display:grid;gap:8px}
 .barrow{display:grid;grid-template-columns:44px 1fr 1fr;gap:8px;align-items:center;font-family:var(--f-mono);font-size:.78rem}
 .barrow .track{background:var(--panel2);border-radius:3px;height:16px;position:relative;overflow:hidden}
@@ -212,10 +214,11 @@ details.more[open] summary{margin-bottom:10px}
   <details class="more">
     <summary>Forecast details: how “getting off” is estimated</summary>
     <p class="small" id="learnStats"></p>
-    <p class="small" id="learnBasis"></p>
+    <p class="small" id="learnSlot"></p>
+    <ul class="small" id="learnBasis"></ul>
     <div class="scroll"><table id="learnTable"></table></div>
     <div class="bar"><button type="button" id="clearLearned">Clear counts recorded on this device</button></div>
-    <p class="note">Baseline: the share of riders who got off at each door for the same weekday and 15-minute slot, averaged over the latest 2 weeks of history. The history is 4 weeks of sample data standing in for MTR records. When an exit line counts real people getting off, that train is added and today’s correction updates. Counts from the virtual CCTV are kept for this session only. Nothing else is learned or trained.</p>
+    <p class="note">Baseline: the share of riders who got off at each door for the same weekday and 15-minute slot, averaged over the latest 2 weeks of history. The history is 4 weeks of sample data standing in for MTR records. When an exit line counts people getting off, that train is added to the history for its weekday and 15-minute slot and saved on this device, and today’s correction updates. So a train counted on Thursday at 09:00 shapes the forecast for the next two Thursdays at 09:00, and the more trains are counted, the more the forecast rests on real counts instead of the sample data. Counts from the virtual CCTV are saved separately and labelled simulated. Nothing else is learned or trained.</p>
   </details>
 </div>
 
