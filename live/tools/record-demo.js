@@ -39,7 +39,7 @@ export async function prepare() {
   const ac = new AudioContext();
   const voice = [];
   for (let i = 0; i < LINES.length; i++) {
-    const buf = await ac.decodeAudioData(await (await fetch(`./tools/vo2/l${i + 1}.wav`)).arrayBuffer());
+    const buf = await ac.decodeAudioData(await (await fetch(`./tools/vo2/l${i + 1}.wav`, { cache: "no-store" })).arrayBuffer());
     voice.push({ buffer: buf, start: LINES[i].start }); LINES[i].end = LINES[i].start + buf.duration;
   }
   MIX = await renderMix(voice, T); ac.close();
